@@ -3,6 +3,7 @@ import { Printer } from 'lucide-react'
 import { addDays, dateKey, getPeriod, parseDate, summarize, type Data } from './finance'
 import './charts.css'
 import ReportShare from './ReportShare'
+import AiCopy from './AssistantCopy'
 
 type Period = ReturnType<typeof getPeriod>
 const yen = (n: number) => `¥${Math.round(n).toLocaleString('ja-JP')}`
@@ -42,7 +43,7 @@ export default function Charts({ data, period, today }: { data: Data; period: Pe
   const empty = <p className="chart-empty">この月期の記録はまだありません</p>
   return <div className="charts-page">
     <header className="report-print-heading"><span>のこす家計簿</span><h1>{period.year}年 {period.month}月期のレポート</h1><p>{dateKey(period.start)} – {dateKey(period.end)}</p></header>
-    <div className="report-tools"><ReportShare title={`${period.year}年 ${period.month}月期のレポート｜のこす家計簿`} text={`${period.year}年 ${period.month}月期（${short(period.start)} – ${short(period.end)}）\n生活費 ${yen(summary.spent)}\n1日平均 ${summary.average === null ? '—' : yen(summary.average)}\n記録 ${summary.recorded}日\n\n記録済みの支出から集計\nのこす家計簿`} /><button className="outline-button" onClick={() => window.print()}><Printer size={16} />PDF・印刷</button></div><p className="report-sharing-note">シェアやPDFには手取り・固定費の情報は含まれません</p>
+    <div className="report-tools"><AiCopy data={data} period={period} today={today} /><ReportShare title={`${period.year}年 ${period.month}月期のレポート｜のこす家計簿`} text={`${period.year}年 ${period.month}月期（${short(period.start)} – ${short(period.end)}）\n生活費 ${yen(summary.spent)}\n1日平均 ${summary.average === null ? '—' : yen(summary.average)}\n記録 ${summary.recorded}日\n\n記録済みの支出から集計\nのこす家計簿`} /><button className="outline-button" onClick={() => window.print()}><Printer size={16} />PDF・印刷</button></div><p className="report-sharing-note">シェアやPDFには手取り・固定費の情報は含まれません</p>
     <div className="chart-overview"><span>生活費 <strong>{yen(summary.spent)}</strong></span><span>記録 <strong>{summary.recorded}日</strong></span><span>1日平均 <strong>{summary.average === null ? '—' : yen(summary.average)}</strong></span></div>
     <div className="charts-grid"><div className="report-trends">
       <section className="chart-panel chart-wide"><h2>日ごとの生活費</h2><p className="chart-caption"><span className="report-screen-only">棒を選ぶと金額を表示。 </span>未記録は「—」、使わなかった日は「0」。</p>{summary.recorded ? <><div className="daily-bars">{daily.map(d => <button key={d.key} className={`daily-bar ${selected === d.key ? 'selected' : ''}`} aria-label={`${short(d.date)} ${d.recorded ? yen(d.amount) : '未記録'}`} aria-pressed={selected === d.key} disabled={d.key > dateKey(last)} onClick={() => setSelected(d.key)}><span className="bar-space">{d.recorded ? d.amount ? <i style={{ height: `${Math.max(2, d.amount / max * 100)}%` }} /> : <b>0</b> : <b>—</b>}</span><span className={d.date.getDay() === 0 ? 'chart-date sunday' : d.date.getDay() === 6 ? 'chart-date saturday' : 'chart-date'}>{d.date.getDate()}</span></button>)}</div><p className="chart-selection" aria-live="polite">{chosen ? `${short(chosen.date)}　${chosen.recorded ? yen(chosen.amount) : '未記録'}` : `1日最大 ${yen(Math.max(0, ...daily.filter(d => d.recorded).map(d => d.amount)))}`}</p></> : empty}</section>

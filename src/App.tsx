@@ -8,6 +8,7 @@ import BrandMark from './BrandMark'
 import PaydayCountdown from './PaydayCountdown'
 import InstallPrompt from './InstallPrompt'
 import Charts from './Charts'
+import AiCopy from './AssistantCopy'
 
 // アプリ名の変更後も既存の記録を引き継ぐため、保存キーは維持する。
 const STORAGE_KEY = 'yohaku-money-v1'
@@ -162,6 +163,7 @@ export default function App() {
             <div className="period-progress"><div role="progressbar" aria-label="給与期間の経過" aria-valuemin={0} aria-valuemax={period.totalDays} aria-valuenow={completed}><i style={{ width: `${completed / period.totalDays * 100}%` }} /></div><span>{completed} / {period.totalDays}日</span></div>
             <div className="hero-statistics"><div><span>使った金額</span><strong>{yen(summary.spent)}</strong></div><div><span>1日平均</span><strong>{summary.average === null ? '—' : yen(Math.round(summary.average))}</strong></div></div>
           </section>
+          {offset === 0 && <AiCopy compact data={data} period={period} today={today} />}
           {resumeDraft && resumeDraft[0] !== todayKey && <button className="draft-resume" onClick={() => openCalendar(resumeDraft[0])}>{shortDate(parseDate(resumeDraft[0]))}の入力を再開 <ChevronRight size={17} /></button>}
           <section className="today-entry" aria-label="今日の記録">
             <div className="today-entry-heading"><h2>今日 <span>{shortDate(today)}</span></h2><strong>{todayLogged ? yen(todayTotal) : '未記録'}</strong></div>

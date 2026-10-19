@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node --import tsx --test src/finance.test.ts",
+    "test": "node --import tsx --test src/*.test.ts",
     "check:dist": "node scripts/check-dist.mjs",
     "check": "npm test && npm run build && npm run check:dist",
     "security:scan": "gitleaks git --redact --no-banner --ignore-gitleaks-allow --config .gitleaks.toml --log-opts=--all .",
