@@ -315,3 +315,20 @@ test('保存失敗後の未保存分を捨てて閉じる前に確認が出る',
   await expect(page.locator('input[name=dailyAmount]')).toHaveValue('1500')
   expect((await data(page)).expenses).toEqual(fixture().expenses)
 })
+
+for (const mode of ['display-mode', 'ios-standalone']) {
+  test(`PWAから紹介サイトを開いても移行ページへ転送しない: ${mode}`, async ({ page }) => {
+    await page.addInitScript(mode => {
+      if (mode === 'ios-standalone') Object.defineProperty(navigator, 'standalone', { value: true })
+      else {
+        const original = window.matchMedia.bind(window)
+        window.matchMedia = query => query === '(display-mode: standalone)' ? Object.assign(original(query), { matches: true }) : original(query)
+      }
+    }, mode)
+    await page.goto(SITE)
+    await expect(page.locator('.lp-hero')).toBeVisible()
+    await expect(page).toHaveURL(`${SITE}/`)
+    await page.goto(`${SITE}/app/`)
+    await expect(page.getByRole('heading', { name: '家計簿のURLが変わりました' })).toBeVisible()
+  })
+}
