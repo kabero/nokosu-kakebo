@@ -10,7 +10,7 @@ Cloudflareで **Workers & Pages → アプリケーションを作成 → Gitリ
 
 | 設定 | 値 |
 | --- | --- |
-| Worker名 | `app` |
+| Worker名 | `www` |
 | 本番ブランチ | `master`（現在のローカルブランチ） |
 | デプロイコマンド | `npx wrangler deploy` |
 | ビルドコマンド | `npm run check` |
