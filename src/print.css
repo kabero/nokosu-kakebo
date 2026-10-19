@@ -1,0 +1,24 @@
+@page{size:A4 portrait;margin:14mm}
+@media print{
+  html,body{background:#fff!important;color:#243e31;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .app-shell .sidebar,.app-shell .topbar,.page-heading,.setup-disclosure,.period-selector,.install-settings,.report-tools,.report-sharing-note,.toast,dialog,.error-banner{display:none!important}
+  .app-shell>main{margin:0!important;padding:0!important;min-height:0}
+  .app-shell .page-content{max-width:none;width:100%;padding:0!important;margin:0}
+  .report-print-heading{display:block;margin-bottom:7mm}
+  .report-print-heading>span{font-size:10pt;color:#52664f}.report-print-heading h1{font-size:20pt;margin:2mm 0;line-height:1.5}.report-print-heading p{font-size:11pt;color:#52664f}
+  .chart-overview{font-size:10pt;gap:9mm;padding-bottom:5mm}.chart-overview strong{font-size:14pt}
+  .charts-grid{display:block}
+  .report-trends{display:block;break-after:page;page-break-after:always}
+  .report-comparisons{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5mm}
+  .chart-panel,.chart-panel.chart-wide{border:1px solid #dce4d5;padding:5mm;border-radius:2mm;break-inside:avoid;page-break-inside:avoid;margin:0 0 5mm;min-width:0}
+  .report-comparisons .chart-panel{margin:0}
+  .report-private-breakdown{display:none!important}
+  .report-comparisons .chart-panel:last-child{grid-column:1/-1}
+  .chart-panel h2{font-size:12pt;line-height:1.5;margin:0}.chart-caption{font-size:8pt;line-height:1.7;margin:2mm 0 4mm}.chart-empty{font-size:10pt;padding:10mm 0}
+  .daily-bars{overflow:visible;gap:2px;height:39mm;padding-bottom:0}.daily-bar{min-width:0;flex:1;gap:2mm;font-size:7pt;pointer-events:none;opacity:1}.bar-space{height:31mm}.bar-space b{font-size:7pt}.daily-bar.selected .bar-space{background:#f3f6ee}.daily-bar.selected i{background:#6f8f57}.daily-bar:disabled{opacity:.5}
+  .report-screen-only{display:none}
+  .chart-selection{display:none}.cumulative-chart{max-height:58mm;width:100%}
+  .horizontal-bars{gap:4mm}.horizontal-bars>div{font-size:8pt;gap:3mm}.horizontal-bars>div>span{width:12mm}.horizontal-bars strong{font-size:9pt;min-width:20mm}.horizontal-bars small{font-size:7pt}.weekdays>div>span{width:4mm}.distribution>div>span{width:27mm}.distribution strong{min-width:8mm}
+  .composition{padding-top:0;gap:3mm}.composition svg{width:30mm;max-width:43%}.composition dl{min-width:25mm}.composition dl>div{font-size:8pt}.composition dd{font-size:10pt}.composition dd small{font-size:8pt}
+  a{text-decoration:none!important}
+}
