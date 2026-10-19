@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
     "build": "tsc -b && vite build && vite build --mode app",
     "preview": "vite preview",
     "test": "node --import tsx --test src/*.test.ts",
@@ -13,7 +13,8 @@
     "security:scan": "gitleaks git --redact --no-banner --ignore-gitleaks-allow --config .gitleaks.toml --log-opts=--all .",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "preview:app": "vite preview --mode app --port 4174",
-    "dev:app": "vite --mode app --port 5174"
+    "dev:app": "vite --mode app --port 5174 --strictPort",
+    "dev:site": "vite --port 5173 --strictPort"
   },
   "dependencies": {
     "react": "^19.0.0",
