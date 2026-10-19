@@ -99,3 +99,7 @@ npm run security:scan
 ```
 
 有効化したフックは、コミット前にステージ済み変更、push前に全履歴を検査します。Gitleaksがない場合も停止します。GitHub Actionsでもpush・PR時に検査し、Secret Scanning / Push ProtectionはGitHubのリポジトリ設定で有効です。フックは各cloneでの有効化が必要で、`--no-verify`などによる回避を完全には防げません。CIはpush後の検査なので、GitHub側のPush Protectionと組み合わせて使います。
+
+## CI
+
+GitHub Actionsはpush・PR時に `npm ci` → テスト → 本番ビルド → Pages公開ファイル検査を実行します。別の `Secret scan` ワークフローでGitleaksも実行します。Actionsは読み取り権限のみで、デプロイ用のSecretsは不要です。Cloudflare側でも `npm run check` を実行します。CI成功をマージ条件にする場合は、GitHubのブランチルールで `Test and build` と `Gitleaks` を必須チェックに指定してください。
