@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --mode app",
     "preview": "vite preview",
     "test": "node --import tsx --test src/*.test.ts",
     "check:dist": "node scripts/check-dist.mjs",
     "check": "npm test && npm run build && npm run check:dist",
     "security:scan": "gitleaks git --redact --no-banner --ignore-gitleaks-allow --config .gitleaks.toml --log-opts=--all .",
-    "hooks:install": "git config --local core.hooksPath .githooks"
+    "hooks:install": "git config --local core.hooksPath .githooks",
+    "preview:app": "vite preview --mode app --port 4174",
+    "dev:app": "vite --mode app --port 5174"
   },
   "dependencies": {
     "react": "^19.0.0",

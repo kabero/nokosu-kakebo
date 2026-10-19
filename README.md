@@ -86,7 +86,7 @@ manifest・PNGアイコン・本番ビルド時に生成するService WorkerでP
 
 ## デプロイ
 
-Cloudflare WorkersとGitHubの直接連携を使います。ビルドコマンドは `npm run check`、出力先は `dist`。設定・公開後の確認・データ移行の詳細は [DEPLOY.md](DEPLOY.md) を参照してください。
+Cloudflare WorkersとGitHubの直接連携を使い、LPは `www`、家計簿は別オリジンの `app` に公開します。ビルドコマンドは両方 `npm run check`。LPは `dist`、家計簿は `dist-app` を配信し、家計簿にはCSPを追加します。設定・公開後の確認・データ移行の詳細は [DEPLOY.md](DEPLOY.md) を参照してください。
 
 ## 認証情報の漏洩チェック
 

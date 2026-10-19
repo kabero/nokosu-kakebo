@@ -9,6 +9,7 @@ import PaydayCountdown from './PaydayCountdown'
 import InstallPrompt from './InstallPrompt'
 import Charts from './Charts'
 import AiCopy from './AssistantCopy'
+import { siteUrl } from './siteUrls'
 import CardImage from './CardImage'
 
 // アプリ名の変更後も既存の記録を引き継ぐため、保存キーは維持する。
@@ -135,7 +136,7 @@ export default function App() {
     <strong className="expense-amount">{yen(e.amount)}</strong><button className="icon-button delete-expense" aria-label={`${e.note || '生活費'}を削除`} onClick={() => removeExpense(e.id)}><Trash2 size={15} /></button>
   </div>)}</div> : <div className="empty-state">支出の記録がありません</div>
 
-  const aboutUrl = (window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone) ? '/about/' : '/'
+  const aboutUrl = siteUrl
 
   return <div className="app-shell">
     <aside className="sidebar">

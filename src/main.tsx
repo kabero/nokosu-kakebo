@@ -1,24 +1,22 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
 import Landing from './Landing'
 import Privacy from './Privacy'
 import Tips from './Tips'
+import Migration from './Migration'
 import './style.css'
 import './surfaces.css'
 import './print.css'
 
+const path = window.location.pathname
 const standalone = window.matchMedia('(display-mode: standalone)').matches || !!(navigator as Navigator & { standalone?: boolean }).standalone
-// 以前の起動URLを保持したホーム画面アイコンにも対応する。
-if (standalone && ['/', '/index.html'].includes(window.location.pathname)) {
+if (standalone && ['/', '/index.html'].includes(path)) {
   window.location.replace('/app/')
 } else {
-  const isTips = /^\/tips\/?$/.test(window.location.pathname)
-  const isLanding = window.location.pathname === '/' || window.location.pathname === '/index.html' || /^\/about\/?$/.test(window.location.pathname)
-  const isPrivacy = /^\/privacy\/?$/.test(window.location.pathname)
-  ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{isTips ? <Tips /> : isPrivacy ? <Privacy /> : isLanding ? <Landing /> : <App />}</React.StrictMode>)
+  const content = /^\/app(?:\/index\.html|\/)?$/.test(path) ? <Migration /> : /^\/tips\/?$/.test(path) ? <Tips /> : /^\/privacy\/?$/.test(path) ? <Privacy /> : <Landing />
+  ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{content}</React.StrictMode>)
 }
-
+// 旧版のキャッシュを解除する更新用Service Worker。家計データは消さない。
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => { /* 通常のブラウザ利用は継続可能 */ }) })
+  window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}) })
 }
