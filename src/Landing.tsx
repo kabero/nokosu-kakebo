@@ -31,7 +31,7 @@ export default function Landing() {
   const [guideSession, setGuideSession] = useState(0)
   const openGuide = () => { setGuideSession(value => value + 1); quickGuide.current?.showModal() }
   return <div className="landing">
-    <header className="lp-header"><a href="/about/" className="lp-brand"><BrandMark /><span>ズボラ家計簿</span></a><nav aria-label="紹介ページのメニュー"><a href="#design">使いやすさ</a><a href="#privacy">プライバシー</a><a href="/" className="lp-nav-start">家計簿を開く <ArrowRight size={16} /></a></nav></header>
+    <header className="lp-header"><a href="/about/" className="lp-brand"><BrandMark /><span>のこす家計簿</span></a><nav aria-label="紹介ページのメニュー"><a href="#design">使いやすさ</a><a href="#privacy">プライバシー</a><a href="/" className="lp-nav-start">家計簿を開く <ArrowRight size={16} /></a></nav></header>
     <main className="lp-main">
       <section className="lp-hero"><div className="lp-hero-copy"><h1>ざっくりつけて、<br /><span>ちゃんと残す。</span></h1><p className="lp-intro">使った額を入れる。<br />残せる額を見て、使うか決める。</p><a className="lp-cta" href="/">家計簿をはじめる <ArrowRight size={19} /></a><button className="lp-quick-trigger" onClick={openGuide}>ズボラな人向けの説明 <ArrowRight size={14} /></button><span className="lp-start-note">無料・アカウント登録不要</span><a className="lp-privacy-promise" href="#privacy"><ShieldCheck size={16} />家計データは、ブラウザにのみ保存。<ArrowRight size={14} /></a></div><div className="lp-hero-product"><ProductDemo /></div></section>
       <div className="lp-principles"><span>銀行へのログイン・会員登録なし</span><span>金額だけを入力</span><span>家計データを運営者に送信しない</span></div>
@@ -62,11 +62,11 @@ export default function Landing() {
       </div></section>
 
       <AdSlot />
-      <section className="lp-final"><BrandMark /><h2>ズボラ家計簿</h2><p>使った額を入れる。残せる額を見て決める。</p><a className="lp-cta" href="/">家計簿をはじめる <ArrowRight size={19} /></a><span className="lp-start-note">無料・アカウント登録不要</span></section>
+      <section className="lp-final"><BrandMark /><h2>のこす家計簿</h2><p>使った額を入れる。残せる額を見て決める。</p><a className="lp-cta" href="/">家計簿をはじめる <ArrowRight size={19} /></a><span className="lp-start-note">無料・アカウント登録不要</span></section>
     </main>
     <dialog className="lp-quick-dialog" ref={quickGuide} aria-labelledby="quick-guide-title" onClick={event => { if (event.target === event.currentTarget) quickGuide.current?.close() }}>
       <div className="lp-quick-content"><button className="lp-quick-close" aria-label="閉じる" onClick={() => quickGuide.current?.close()}><X size={20} /></button><h2 id="quick-guide-title">やることはこれだけ</h2><ol><li className="quick-setup-step"><strong className="quick-setup-title">初期設定</strong>{guideSession > 0 && <QuickSetup key={guideSession} />}</li><li><strong>思い出した時に使った額を入れる</strong></li><li><strong>残せる額を見て使うか決める</strong></li></ol><a className="lp-cta" href="/">家計簿をはじめる <ArrowRight size={18} /></a></div>
     </dialog>
-    <footer className="lp-footer lp-site-footer"><div className="lp-footer-top"><div><a href="/about/" className="lp-brand"><BrandMark /><span>ズボラ家計簿</span></a><p>ざっくりつけて、ちゃんと残す。</p></div><nav aria-label="フッターメニュー"><a href="#design">使いやすさ</a><a href="#privacy">家計情報の取り扱い</a><button onClick={openGuide}>ズボラな人向けの説明</button><a href="/tips/">効果的な使い方</a><a href="/privacy/">プライバシーポリシー</a><a href="/">家計簿を開く <ArrowRight size={14} /></a></nav></div><div className="lp-footer-bottom"><span>無料・アカウント登録不要</span><small>© {new Date().getFullYear()} ズボラ家計簿</small></div></footer>
+    <footer className="lp-footer lp-site-footer"><div className="lp-footer-top"><div><a href="/about/" className="lp-brand"><BrandMark /><span>のこす家計簿</span></a><p>ざっくりつけて、ちゃんと残す。</p></div><nav aria-label="フッターメニュー"><a href="#design">使いやすさ</a><a href="#privacy">家計情報の取り扱い</a><button onClick={openGuide}>ズボラな人向けの説明</button><a href="/tips/">効果的な使い方</a><a href="/privacy/">プライバシーポリシー</a><a href="/">家計簿を開く <ArrowRight size={14} /></a></nav></div><div className="lp-footer-bottom"><span>無料・アカウント登録不要</span><small>© {new Date().getFullYear()} のこす家計簿</small></div></footer>
   </div>
 }

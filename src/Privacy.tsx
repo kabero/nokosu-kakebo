@@ -6,12 +6,12 @@ import { adsEnabled } from './ads'
 
 export default function Privacy() {
   return <div className="privacy-page">
-    <header className="privacy-header"><a href="/about/" className="privacy-brand"><BrandMark /><span>ズボラ家計簿</span></a><a href="/">家計簿を開く <ArrowRight size={16} /></a></header>
+    <header className="privacy-header"><a href="/about/" className="privacy-brand"><BrandMark /><span>のこす家計簿</span></a><a href="/">家計簿を開く <ArrowRight size={16} /></a></header>
     <main className="privacy-main">
-      <a className="privacy-back" href="/about/"><ArrowLeft size={15} />ズボラ家計簿について</a>
+      <a className="privacy-back" href="/about/"><ArrowLeft size={15} />のこす家計簿について</a>
       <h1>プライバシーポリシー</h1>
       <p className="privacy-date">制定：2026年10月19日／最終更新：2026年10月20日</p>
-      <p className="privacy-lead">ズボラ家計簿（以下「本サービス」）は、入力した家計データを、お使いのブラウザにのみ保存する家計簿です。このページでは、保存する情報とその取り扱いについて説明します。</p>
+      <p className="privacy-lead">のこす家計簿（以下「本サービス」）は、入力した家計データを、お使いのブラウザにのみ保存する家計簿です。このページでは、保存する情報とその取り扱いについて説明します。</p>
       <div className="privacy-summary"><strong>入力した家計データは、お使いのブラウザにのみ保存します。</strong><p>運営者が手取り・支出・メモなどを受け取ったり、運営サーバーに保管したりすることはありません。ご自身で書き出したバックアップはファイルとして保存されます。</p></div>
 
       <section><h2>1. ブラウザに保存する情報</h2><p>家計の表示・計算・記録を行うため、次の情報を利用中のブラウザに保存します。</p><ul><li>手取り額、給料日、休日の取り扱いなどの設定</li><li>支出の金額・日付・メモ、固定費・臨時支出</li><li>支出がなかった日の記録、入力途中の下書き</li><li>初期設定の進み具合、ホーム画面への追加案内を表示・閉じた状態など、操作に関する情報</li></ul><p>これらは本サービスの画面表示や計算のために、ブラウザ内で使用します。家計情報を外部へ自動送信する機能はありません。</p></section>
@@ -26,6 +26,6 @@ export default function Privacy() {
       {(siteInfo.operatorName || siteInfo.contactEmail || siteInfo.contactUrl) && <section><h2>10. 運営者・お問い合わせ</h2>{siteInfo.operatorName && <p>運営者：{siteInfo.operatorName}</p>}{siteInfo.contactEmail && <p><a href={`mailto:${siteInfo.contactEmail}`}>{siteInfo.contactEmail}</a></p>}{siteInfo.contactUrl && <p><a href={siteInfo.contactUrl}>お問い合わせ</a></p>}</section>}
       <a className="privacy-return" href="/">家計簿を開く <ArrowRight size={17} /></a>
     </main>
-    <footer className="privacy-footer"><a href="/about/">ズボラ家計簿</a><span>プライバシーポリシー</span></footer>
+    <footer className="privacy-footer"><a href="/about/">のこす家計簿</a><span>プライバシーポリシー</span></footer>
   </div>
 }

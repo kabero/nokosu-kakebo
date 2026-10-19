@@ -5,7 +5,7 @@ import './tips.css'
 
 export default function Tips() {
   return <div className="privacy-page tips-page">
-    <header className="privacy-header"><a href="/about/" className="privacy-brand"><BrandMark /><span>ズボラ家計簿</span></a><a href="/">家計簿を開く <ArrowRight size={16} /></a></header>
+    <header className="privacy-header"><a href="/about/" className="privacy-brand"><BrandMark /><span>のこす家計簿</span></a><a href="/">家計簿を開く <ArrowRight size={16} /></a></header>
     <main className="privacy-main tips-main">
       <a className="privacy-back" href="/"><ArrowLeft size={15} />家計簿に戻る</a>
       <h1>効果的な使い方</h1>
@@ -18,6 +18,6 @@ export default function Tips() {
       <p className="tips-limit">表示額は記録に応じて変わる目安です。未記録の支出は含まれません。</p>
       <a className="privacy-return" href="/">家計簿を開く <ArrowRight size={17} /></a>
     </main>
-    <footer className="privacy-footer"><a href="/about/">ズボラ家計簿について</a><a href="/privacy/">プライバシーポリシー</a></footer>
+    <footer className="privacy-footer"><a href="/about/">のこす家計簿について</a><a href="/privacy/">プライバシーポリシー</a></footer>
   </div>
 }
