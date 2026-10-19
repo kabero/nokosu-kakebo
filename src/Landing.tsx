@@ -33,7 +33,7 @@ export default function Landing() {
   return <div className="landing">
     <header className="lp-header"><a href="/" className="lp-brand"><BrandMark /><span>のこす家計簿</span></a><nav aria-label="紹介ページのメニュー"><a href="#design">使いやすさ</a><a href="#privacy">プライバシー</a><a href={appUrl} className="lp-nav-start">家計簿を開く <ArrowRight size={16} /></a></nav></header>
     <main className="lp-main">
-      {hasLegacyData() && <p className="lp-migration"><a href="/app/">以前の家計データを移す <ArrowRight size={15} /></a></p>}
+      {hasLegacyData() && <aside className="lp-migration" aria-label="以前の家計データの移行"><span>このブラウザに以前の記録があります</span><a href="/app/">移行する <ArrowRight size={15} /></a></aside>}
       <section className="lp-hero"><div className="lp-hero-copy"><h1>ざっくりつけて、<br /><span>ちゃんと残す。</span></h1><p className="lp-intro">使った額を入れる。<br />残せる額を見て、使うか決める。</p><a className="lp-cta" href={appUrl}>家計簿をはじめる <ArrowRight size={19} /></a><span className="lp-start-note">無料・登録不要</span><button className="lp-quick-trigger" onClick={openGuide}>ズボラな人向けの説明 <ArrowRight size={14} /></button><a className="lp-privacy-promise" href="#privacy"><ShieldCheck size={16} />家計データはブラウザにのみ保存<ArrowRight size={14} /></a></div><div className="lp-hero-product"><ProductDemo /></div></section>
 
       <section className="lp-use"><div className="lp-use-heading"><h2>これを買ったら、<br className="mobile-break" />いくら残せる？</h2><p>使い道を細かく振り返るより、次に使うお金を決めるために。</p></div><ol className="lp-use-steps"><li><h3>使った額を入れる</h3><p>その日の合計だけ。<br />分類もメモもいりません。</p></li><li><h3>残せる額を見る</h3><p>次の給料日までの見通しを、<br />ひと目で確認。</p></li><li><h3>使うか、残すか決める</h3><p>買い物の前にひと呼吸。<br />残したいお金を見てから判断。</p></li></ol><a href={appUrl} className="lp-text-link">使った金額を記録してみる <ArrowRight size={16} /></a></section>

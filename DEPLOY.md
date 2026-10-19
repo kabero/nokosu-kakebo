@@ -23,7 +23,7 @@ GitHub: https://github.com/kabero/nokosu-kakebo
 | ルートディレクトリ | リポジトリのルート |
 | ビルド環境変数 | `NODE_VERSION=22` |
 
-`npm run check` はテスト → 両方のビルド → 公開ファイルの検査を行います。`app` Workerは `wrangler.app.toml` で `dist-app` を配信します。`www` には `wrangler.toml` を使います。非本番ブランチは本番へdeployしない設定にしてください。
+`npm run check` はテスト → 両方のビルド → 公開ファイルの検査を行います。`app` Workerは `wrangler.app.toml` で `dist-app` を配信します。`www` には `wrangler.toml` を使います。非本番ブランチは本番へdeployしない設定にしてください。プレビューブランチのビルドは無効にし、PRの検証はGitHub Actionsで行います。
 
 家計簿用のビルドには広告コード・広告確認meta・ads.txtを含めません。AdSenseを使う場合、環境変数は `www` のみに設定します。家計簿側にCloudflare Web Analytics等のスクリプトも追加しないでください。
 
@@ -70,7 +70,7 @@ LPの設定フォームは家計簿へのリンクに変更しています。新
 - 初回読み込み・Service Workerの有効化後、オフラインで家計簿が開くこと。
 - `src/siteInfo.ts` に掲載する運営者・問い合わせ先が決まったら補うこと。
 
-開発時はLPが `npm run dev`、家計簿が `npm run dev:app`。
+開発時は `npm run dev` でLP（5173）と家計簿（5174）を同時に起動します。片方だけなら `npm run dev:site` / `npm run dev:app`。既存の開発サーバーは終了してから起動してください。
 
 ローカル確認：`npm run check`、LPは `npm run preview`、家計簿は `npm run preview:app`（4174番ポート）。Vite previewは `_headers` を適用しないのでCSPの最終確認は公開先で行います。
 
