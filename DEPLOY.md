@@ -23,7 +23,7 @@ GitHub: https://github.com/kabero/nokosu-kakebo
 | ルートディレクトリ | リポジトリのルート |
 | ビルド環境変数 | `NODE_VERSION=22` |
 
-`npm run check` はテスト → 両方のビルド → 公開ファイルの検査を行います。`app` Workerは `wrangler.app.toml` で `dist-app` を配信します。`www` には `wrangler.toml` を使います。非本番ブランチは本番へdeployしない設定にしてください。
+`npm run check` はテスト → 両方のビルド → 公開ファイルの検査を行います。`app` Workerは `wrangler.app.toml` で `dist-app` を配信します。`www` には `wrangler.toml` を使います。非本番ブランチは本番へdeployしない設定にしてください。プレビューブランチのビルドは無効にし、PRの検証はGitHub Actionsで行います。
 
 家計簿用のビルドには広告コード・広告確認meta・ads.txtを含めません。AdSenseを使う場合、環境変数は `www` のみに設定します。家計簿側にCloudflare Web Analytics等のスクリプトも追加しないでください。
 
