@@ -8,7 +8,7 @@ const standalone = () => window.matchMedia('(display-mode: standalone)').matches
 const read = () => { try { return localStorage.getItem(KEY) } catch { return null } }
 const write = (value: string) => { try { localStorage.setItem(KEY, value) } catch { /* 今回の表示状態はメモリにも保持する */ } }
 
-export default function InstallPrompt({ recorded, settings }: { recorded: boolean; settings: boolean }) {
+export default function InstallPrompt({ recorded, showEntry }: { recorded: boolean; showEntry: boolean }) {
   const [event, setEvent] = useState<InstallEvent | null>(null)
   const [installed, setInstalled] = useState(() => standalone() || read() === 'installed')
   const [open, setOpen] = useState(false)
@@ -61,7 +61,7 @@ export default function InstallPrompt({ recorded, settings }: { recorded: boolea
     finally { setBusy(false) }
   }
   return <>
-    {settings && !installed && <button className="install-settings" onClick={() => { setMessage(''); setOpen(true) }}><Download size={16} />ホーム画面に追加 <ChevronRight size={16} /></button>}
+    {showEntry && !installed && <button className="install-settings" onClick={() => { setMessage(''); setOpen(true) }}><Download size={16} />ホーム画面に追加 <ChevronRight size={16} /></button>}
     <dialog className="install-dialog" ref={dialog} aria-labelledby="install-title" onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}>
       <div className="install-content"><button className="icon-button install-close" aria-label="閉じる" onClick={close}><X size={19} /></button><BrandMark className="install-mark" /><h2 id="install-title">次の記録を、すぐ開けるように。</h2><p>ホーム画面に追加すると、アイコンから開けます。</p>
         {event ? <button className="primary-button full-width" disabled={busy} onClick={install}><Download size={16} />ホーム画面に追加</button> : ios ? <ol><li>Safariでこのページを開く</li><li>共有メニューを開く</li><li>「ホーム画面に追加」を選ぶ</li></ol> : <p>ブラウザのメニューにある「インストール」または「ホーム画面に追加」を選んでください。項目がない場合は、対応する別のブラウザでお試しください。</p>}
