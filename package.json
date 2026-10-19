@@ -14,7 +14,8 @@
     "hooks:install": "git config --local core.hooksPath .githooks",
     "preview:app": "vite preview --mode app --port 4174",
     "dev:app": "vite --mode app --port 5174 --strictPort",
-    "dev:site": "vite --port 5173 --strictPort"
+    "dev:site": "vite --port 5173 --strictPort",
+    "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {
     "react": "^19.0.0",
@@ -28,7 +29,8 @@
     "vite": "^6.0.5",
     "typescript": "~5.7.2",
     "tsx": "^4.19.2",
-    "@types/node": "^22.10.5"
+    "@types/node": "^22.10.5",
+    "@playwright/test": "^1.64.1"
   },
   "engines": {
     "node": "22.x"
