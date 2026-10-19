@@ -20,6 +20,8 @@ React / TypeScript / Vite / Lucide React。UIは日本語、円単位です。
 
 ## 保存と互換性
 
+保存失敗・競合時の保護と回帰テストは [STORAGE.md](STORAGE.md) を参照してください。
+
 家計データは家計簿オリジンのlocalStorageに保存します。データ形の検証・旧データの移行は `src/finance.ts`、読み込み・書き出しは `src/App.tsx` にあります。
 
 - 家計データの保存キー `yohaku-money-v1` とインストール案内のキー `nokori-install-v1` は、過去のアプリ名から引き継いでいます。

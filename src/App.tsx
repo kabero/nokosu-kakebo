@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChartNoAxesCombined, Check, ChevronLeft, ChevronRight, Download, House, LayoutDashboard, Plus, ReceiptText, Settings as SettingsIcon, ShieldCheck, Trash2, Upload, X } from 'lucide-react'
-import { dateKey, dayCount, getPeriod, initialData, parseDate, summarize, forecastSavings, validateData, migrateLegacyCosts, copyFixedCosts, carryForwardFixedCosts, markFixedCostPeriod, type Cost, type Data, type Expense, recordDailyAmount, type Draft } from './finance'
+import { dateKey, dayCount, getPeriod, initialData, parseDate, summarize, forecastSavings, copyFixedCosts, carryForwardFixedCosts, markFixedCostPeriod, type Cost, type Data, type Expense, recordDailyAmount, type Draft } from './finance'
 
 import ExpenseCalendar from './ExpenseCalendar'
 import SetupSteps from './SetupSteps'
@@ -10,29 +10,19 @@ import PaydayCountdown from './PaydayCountdown'
 import InstallPrompt from './InstallPrompt'
 import Charts from './Charts'
 import AiCopy from './AssistantCopy'
+import { DataStorage, STORAGE_KEY, STORAGE_LOCK, parseBackup } from './storage'
 import { siteUrl } from './siteUrls'
 import CardImage from './CardImage'
 
-// アプリ名の変更後も既存の記録を引き継ぐため、保存キーは維持する。
-const STORAGE_KEY = 'yohaku-money-v1'
 const yen = (n: number) => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(n)
 const shortDate = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`
 const longDate = (d: Date) => `${d.getMonth() + 1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`
 type View = 'overview' | 'history' | 'costs' | 'charts' | 'settings'
 type Modal = { type: 'expense'; expense?: Expense } | { type: 'cost'; kind: 'fixed' | 'extra'; cost?: Cost } | null
 
-function loadData(): { data: Data; error: string } {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (!saved) return { data: initialData, error: '' }
-    const parsed: unknown = JSON.parse(saved)
-    if (!validateData(parsed)) throw new Error()
-    return { data: carryForwardFixedCosts(migrateLegacyCosts(parsed, new Date()), new Date()), error: '' }
-  } catch { return { data: initialData, error: '保存データを読み込めませんでした。元のデータを上書きしないよう、保存を停止しています。バックアップを読み込むか、設定から新しく始めてください。' } }
-}
-
 export default function App() {
-  const [loaded] = useState(loadData)
+  const [storage] = useState(() => new DataStorage(() => window.localStorage, navigator.locks ? task => navigator.locks.request(STORAGE_LOCK, task) : null, new Date()))
+  const loaded = storage.loaded
   const [data, setData] = useState<Data>(loaded.data)
   const [storageBlocked, setStorageBlocked] = useState(!!loaded.error)
   const [error, setError] = useState(loaded.error)
@@ -67,13 +57,30 @@ export default function App() {
   const todayLogged = data.loggedDates.includes(todayKey) || todayExpenses.length > 0
   const resumeDraft = Object.entries(data.drafts ?? {}).filter(([key]) => key <= todayKey).sort((a, b) => b[1].updatedAt - a[1].updatedAt)[0]
   const completed = Math.min(period.totalDays, Math.max(0, dayCount(period.start, today)))
-  const notify = (message: string) => setToast(message)
+  const notify = (message: string) => { if (!storageBlocked || message === 'バックアップを書き出しました') setToast(message) }
   useEffect(() => { setData(d => carryForwardFixedCosts(d, today)) }, [data, today])
   useEffect(() => {
     if (storageBlocked) return
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); setError('') }
-    catch { setError('ブラウザに保存できません。バックアップを書き出してデータを保管してください。') }
-  }, [data, storageBlocked])
+    let active = true
+    void storage.save(data).then(result => {
+      if (!active) return
+      if (!result.ok) { setStorageBlocked(true); setError(result.error); setToast('') }
+      else if (!result.skipped) setError('')
+    })
+    return () => { active = false }
+  }, [data, storageBlocked, storage])
+  useEffect(() => {
+    const check = () => { const message = storage.checkForExternalChange(); if (message) { setStorageBlocked(true); setError(message); setToast('') } }
+    const changed = (event: StorageEvent) => { if ((event.key === null || event.key === STORAGE_KEY) && event.storageArea === window.localStorage) check() }
+    window.addEventListener('storage', changed)
+    window.addEventListener('focus', check)
+    return () => { window.removeEventListener('storage', changed); window.removeEventListener('focus', check) }
+  }, [storage])
+  useEffect(() => {
+    const guard = (event: BeforeUnloadEvent) => { if (storage.hasUnsavedChanges(data)) { event.preventDefault(); event.returnValue = '' } }
+    window.addEventListener('beforeunload', guard)
+    return () => window.removeEventListener('beforeunload', guard)
+  }, [data, storage])
   useEffect(() => {
     const update = () => {
       const key = dateKey(new Date())
@@ -116,22 +123,31 @@ export default function App() {
     if (!confirm('この支出を削除しますか？ この日は記録済みのままになります。')) return
     setData(d => ({ ...d, expenses: d.expenses.filter(e => e.id !== id) })); notify('支出を削除しました')
   }
+  function downloadText(text: string, filename: string) {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  }
   function exportData() {
-    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
-    const a = document.createElement('a'); a.href = url; a.download = `nokosu-kakeibo-${todayKey}.json`; a.click(); URL.revokeObjectURL(url)
-    notify('バックアップを書き出しました')
+    try { downloadText(storage.exportText(data), `nokosu-kakeibo-${todayKey}.json`); notify('バックアップを書き出しました') }
+    catch { setError('記録を読み出せませんでした。ブラウザの保存データを削除せず、アクセス設定を確認してください。') }
+  }
+  async function replaceData(next: Data, message: string) {
+    const result = await storage.replace(next)
+    if (!result.ok) { setStorageBlocked(true); setError(result.error); return }
+    setData(next); setStorageBlocked(false); setError(''); setOffset(0); notify(message)
   }
   async function importData(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; event.target.value = ''
     if (!file) return
     try {
       if (file.size > 5000000) throw new Error()
-      const parsed: unknown = JSON.parse(await file.text())
-      if (!validateData(parsed)) throw new Error()
+      const parsed = parseBackup(await file.text(), today)
       if (!confirm('現在のデータをバックアップの内容で置き換えますか？')) return
-      setStorageBlocked(false); setData(carryForwardFixedCosts(migrateLegacyCosts(parsed, today), today)); setOffset(0); notify('バックアップを読み込みました')
+      await replaceData(parsed, 'バックアップを読み込みました')
     } catch { setError('読み込めませんでした。のこす家計簿から書き出した有効な JSON ファイル（5 MB 以下）を選んでください。') }
   }
+  const recovery = error ? storage.previousText() : null
   const expenseList = (expenses: Expense[], limit?: number) => expenses.length ? <div className="expense-list">{[...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit).map(e => <div className="expense-row" key={e.id}>
     <button className="expense-description" onClick={() => setModal({ type: 'expense', expense: e })}><strong>{e.note || '生活費'}</strong><span>{shortDate(parseDate(e.date))}</span></button>
     <strong className="expense-amount">{yen(e.amount)}</strong><button className="icon-button delete-expense" aria-label={`${e.note || '生活費'}を削除`} onClick={() => removeExpense(e.id)}><Trash2 size={15} /></button>
@@ -151,7 +167,7 @@ export default function App() {
     <main>
       <header className="topbar"><a className="topbar-brand" href={aboutUrl}><BrandMark className="topbar-mark" /><span><strong>のこす家計簿</strong><span className="brand-tagline">ざっくりつけて、ちゃんと残す。</span></span></a><div className="topbar-links"><span className="today-date">{today.getFullYear()}年{longDate(today)}</span></div></header>
       <div className="page-content">
-        {error && <div className="error-banner" role="alert">{error}</div>}
+        {error && <div className="error-banner" role="alert">{error}{recovery && <button className="outline-button recovery-download" onClick={() => downloadText(recovery, `nokosu-kakeibo-previous-${todayKey}.json`)}>前回の保存を取り出す</button>}</div>}
         <div className="page-heading"><div><h1>{view === 'overview' ? '残せるお金' : view === 'history' ? '支出の記録' : view === 'costs' ? '固定費・臨時支出' : view === 'charts' ? 'レポート' : '設定'}</h1></div></div>
         {(!setupComplete || !setup.dismissed) && <details className="setup-disclosure" open={!setupComplete || view === 'settings' || view === 'costs'}><summary><strong className="setup-heading-label"><BeginnerMark />初期設定</strong><span>{setupComplete ? '完了' : `残り${[data.settings.income > 0, setup.paydayConfirmed, setup.fixedCostsConfirmed].filter(value => !value).length}項目`}</span><ChevronRight size={17} /></summary><SetupSteps steps={[
           { label: '毎月の手取り', value: data.settings.income > 0 ? yen(data.settings.income) : '未設定', done: data.settings.income > 0, onClick: () => { setView('settings'); setSetupField('income') } },
@@ -186,7 +202,7 @@ export default function App() {
         {view === 'settings' && <div className="settings-grid"><section className="panel"><div className="section-heading"><h2>給料の設定</h2>{setup.dismissed && <button className="text-button" onClick={() => setData(d => ({ ...d, setup: { ...setup, dismissed: false } }))}>初期設定を表示</button>}</div><form className="settings-form" key={JSON.stringify(data.settings)} onSubmit={e => {
           e.preventDefault(); const f = new FormData(e.currentTarget)
           setData(d => ({ ...d, settings: { income: Number(f.get('income')), payday: Number(f.get('payday')), holidays: f.get('holidays') === 'on' }, setup: { ...setup, paydayConfirmed: true } })); setOffset(0); notify('設定を保存しました')
-        }}><label>毎月の手取り額（ボーナス・残業代を除く）<div className="input-with-unit"><input ref={incomeInput} name="income" type="number" min="0" max="1000000000" step="1" defaultValue={data.settings.income} required /><span>円</span></div></label><label>給料日<div className="input-with-unit"><input ref={paydayInput} name="payday" type="number" min="1" max="31" step="1" defaultValue={data.settings.payday} required /><span>日</span></div></label><label className="checkbox-label"><input name="holidays" type="checkbox" defaultChecked={data.settings.holidays} />日本の祝日も避けて前倒しする</label><button className="primary-button" type="submit"><Check size={17} />設定を保存</button></form></section><div><section className="panel storage-panel"><div className="section-heading"><h2>データの保管</h2><ShieldCheck size={20} /></div><button className="outline-button full-width" onClick={exportData}><Download size={17} />バックアップを書き出す</button><button className="outline-button full-width import-button" onClick={() => fileInput.current?.click()}><Upload size={17} />バックアップを読み込む</button><input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={importData} /></section><a className="about-link" id="usage" href="/tips/">効果的な使い方 <ChevronRight size={16} /></a><a className="about-link" href={aboutUrl}>のこす家計簿について <ChevronRight size={16} /></a><a className="about-link" href="/privacy/">プライバシーポリシー <ChevronRight size={16} /></a><button className="reset-button" onClick={() => { if (confirm('支出・固定費・設定をすべて消去して、初期状態に戻しますか？ この操作は取り消せません。')) { setData(structuredClone(initialData)); setStorageBlocked(false); setOffset(0); notify('データを初期化しました') } }}>すべてのデータを初期化</button></div></div>}
+        }}><label>毎月の手取り額（ボーナス・残業代を除く）<div className="input-with-unit"><input ref={incomeInput} name="income" type="number" min="0" max="1000000000" step="1" defaultValue={data.settings.income} required /><span>円</span></div></label><label>給料日<div className="input-with-unit"><input ref={paydayInput} name="payday" type="number" min="1" max="31" step="1" defaultValue={data.settings.payday} required /><span>日</span></div></label><label className="checkbox-label"><input name="holidays" type="checkbox" defaultChecked={data.settings.holidays} />日本の祝日も避けて前倒しする</label><button className="primary-button" type="submit"><Check size={17} />設定を保存</button></form></section><div><section className="panel storage-panel"><div className="section-heading"><h2>データの保管</h2><ShieldCheck size={20} /></div><button className="outline-button full-width" onClick={exportData}><Download size={17} />バックアップを書き出す</button><button className="outline-button full-width import-button" onClick={() => fileInput.current?.click()}><Upload size={17} />バックアップを読み込む</button><input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={importData} /></section><a className="about-link" id="usage" href="/tips/">効果的な使い方 <ChevronRight size={16} /></a><a className="about-link" href={aboutUrl}>のこす家計簿について <ChevronRight size={16} /></a><a className="about-link" href="/privacy/">プライバシーポリシー <ChevronRight size={16} /></a><button className="reset-button" onClick={() => { if (confirm('記録を初期状態に戻しますか？ 直前の記録は復旧用としてブラウザに残ります。')) { void replaceData(structuredClone(initialData), 'データを初期化しました') } }}>すべてのデータを初期化</button></div></div>}
 
       </div>
     </main>

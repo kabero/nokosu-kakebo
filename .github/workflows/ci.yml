@@ -16,7 +16,7 @@ jobs:
   check:
     name: Test and build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -33,5 +33,19 @@ jobs:
         run: npm test
       - name: Build production site
         run: npm run build
-      - name: Verify Pages output
+      - name: Verify deployment outputs
         run: npm run check:dist
+      - name: Install test browsers
+        run: npx playwright install --with-deps chromium webkit
+      - name: Test storage in Chromium and WebKit
+        run: npx playwright test
+      - name: Save browser test failure reports
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: storage-browser-test-reports
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
