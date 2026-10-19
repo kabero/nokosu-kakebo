@@ -124,6 +124,7 @@ export function carryForwardFixedCosts(data: Data, today: Date): Data {
   return result
 }
 export function saveDailyTotal(data: Data, date: string, amount: number): Data {
+  if (!isDateKey(date)) return data
   if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000000) return data
   const entries = data.expenses.filter(e => e.date === date)
   const total = entries.reduce((sum, e) => sum + e.amount, 0)
@@ -140,6 +141,7 @@ export function calculateAmount(expression: string): number | null {
   return Number.isSafeInteger(amount) && amount <= 1000000000 ? amount : null
 }
 export function recordDailyAmount(data: Data, date: string, amount: number, mode: Draft['mode']): Data {
+  if (!isDateKey(date) || (mode !== 'add' && mode !== 'total')) return data
   const total = data.expenses.filter(e => e.date === date).reduce((sum, e) => sum + e.amount, 0)
   if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000000 || (mode === 'add' && total + amount > 1000000000)) return data
   const updated = mode === 'total' ? saveDailyTotal(data, date, amount) : {
@@ -149,18 +151,25 @@ export function recordDailyAmount(data: Data, date: string, amount: number, mode
   }
   return { ...updated, drafts: Object.fromEntries(Object.entries(data.drafts ?? {}).filter(([key]) => key !== date)) }
 }
+export function isDateKey(s: unknown): s is string {
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && Number.isFinite(parseDate(s).getTime()) && dateKey(parseDate(s)) === s
+}
 export function validateData(value: unknown): value is Data {
-  if (!value || typeof value !== 'object') return false
-  const d = value as Data
+  const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
   const money = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 && n <= 1000000000
-  const str = (s: unknown) => typeof s === 'string' && s.length <= 500
-  const date = (s: unknown) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && Number.isFinite(parseDate(s).getTime()) && dateKey(parseDate(s)) === s
-  return d.version === 1 && !!d.settings && money(d.settings.income)
-    && (d.drafts === undefined || (!!d.drafts && typeof d.drafts === 'object' && !Array.isArray(d.drafts) && Object.entries(d.drafts).every(([key, draft]) => date(key) && draft && str(draft.expression) && (draft.mode === 'add' || draft.mode === 'total') && Number.isSafeInteger(draft.updatedAt) && draft.updatedAt >= 0)))
-    && (d.fixedCostPeriods === undefined || (Array.isArray(d.fixedCostPeriods) && d.fixedCostPeriods.every(date)))
-    && (d.setup === undefined || (!!d.setup && typeof d.setup.paydayConfirmed === 'boolean' && typeof d.setup.fixedCostsConfirmed === 'boolean' && typeof d.setup.dismissed === 'boolean'))
-    && Number.isInteger(d.settings.payday) && d.settings.payday >= 1 && d.settings.payday <= 31 && typeof d.settings.holidays === 'boolean'
-    && Array.isArray(d.expenses) && d.expenses.every(e => e && str(e.id) && date(e.date) && money(e.amount) && str(e.note) && (e.category === undefined || str(e.category)))
-    && Array.isArray(d.costs) && d.costs.every(c => c && str(c.id) && str(c.name) && money(c.amount) && ((c.kind === 'fixed' && (c.period === undefined || date(c.period))) || (c.kind === 'extra' && date(c.period))))
-    && Array.isArray(d.loggedDates) && d.loggedDates.every(date)
+  const str = (s: unknown): s is string => typeof s === 'string' && s.length <= 500
+  const id = (s: unknown) => str(s) && s.length > 0
+  const unique = (rows: { id: string }[]) => new Set(rows.map(row => row.id)).size === rows.length
+  try {
+    if (!record(value)) return false
+    const d = value
+    return d.version === 1 && record(d.settings) && money(d.settings.income)
+      && Number.isInteger(d.settings.payday) && (d.settings.payday as number) >= 1 && (d.settings.payday as number) <= 31 && typeof d.settings.holidays === 'boolean'
+      && (d.drafts === undefined || (record(d.drafts) && Object.entries(d.drafts).every(([key, draft]) => isDateKey(key) && record(draft) && str(draft.expression) && (draft.mode === 'add' || draft.mode === 'total') && Number.isSafeInteger(draft.updatedAt) && (draft.updatedAt as number) >= 0)))
+      && (d.fixedCostPeriods === undefined || (Array.isArray(d.fixedCostPeriods) && Array.from(d.fixedCostPeriods).every(isDateKey)))
+      && (d.setup === undefined || (record(d.setup) && typeof d.setup.paydayConfirmed === 'boolean' && typeof d.setup.fixedCostsConfirmed === 'boolean' && typeof d.setup.dismissed === 'boolean'))
+      && Array.isArray(d.expenses) && Array.from(d.expenses).every(e => record(e) && id(e.id) && isDateKey(e.date) && money(e.amount) && str(e.note) && (e.category === undefined || str(e.category))) && unique(d.expenses)
+      && Array.isArray(d.costs) && Array.from(d.costs).every(c => record(c) && id(c.id) && str(c.name) && money(c.amount) && ((c.kind === 'fixed' && (c.period === undefined || isDateKey(c.period))) || (c.kind === 'extra' && isDateKey(c.period)))) && unique(d.costs)
+      && Array.isArray(d.loggedDates) && Array.from(d.loggedDates).every(isDateKey)
+  } catch { return false }
 }

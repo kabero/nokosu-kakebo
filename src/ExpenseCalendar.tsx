@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Check, X } from 'lucide-react'
 import { addDays, calculateAmount, dateKey, parseDate, type Draft, type Expense, type getPeriod } from './finance'
 
@@ -66,7 +66,7 @@ export default function ExpenseCalendar({ period, today, initialDate, expenses, 
         return <button type="button" key={key} data-date={key} disabled={future} className={`calendar-day ${logged ? 'recorded' : ''} ${selected === key ? 'selected' : ''} ${key === today ? 'is-today' : ''}`} aria-label={`${key === today ? '今日 ' : ''}${label(date)} ${logged ? yen(totalFor(key)) : future ? '入力できません' : '未記録'}${hasDraft ? ' 下書き' : ''}`} aria-current={key === today ? 'date' : undefined} aria-pressed={selected === key} onClick={() => selectDay(key)}>
           {key === today && <span className="calendar-today-badge">今日</span>}
           <span className={`calendar-date ${date.getDay() === 0 ? 'sunday' : date.getDay() === 6 ? 'saturday' : ''}`}>{label(date)}</span>
-          <strong>{logged ? yen(totalFor(key)) : future ? '—' : <span className="calendar-add">＋</span>}</strong>
+          <strong style={logged ? { '--amount-length': yen(totalFor(key)).length } as CSSProperties : undefined}>{logged ? yen(totalFor(key)) : future ? '—' : <span className="calendar-add">＋</span>}</strong>
           {hasDraft ? <span className="calendar-draft-label">下書き</span> : logged && <Check className="calendar-check" size={12} />}
         </button>
       })}
