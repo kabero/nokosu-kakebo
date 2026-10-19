@@ -332,3 +332,24 @@ for (const mode of ['display-mode', 'ios-standalone']) {
     await expect(page.getByRole('heading', { name: '家計簿のURLが変わりました' })).toBeVisible()
   })
 }
+
+for (const width of [320, 375, 390]) {
+  test(`スマホ幅${width}pxでもカレンダーの金額を1行で表示する`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    const sample = fixture()
+    sample.expenses[0].amount = 12345
+    sample.expenses[1].amount = 123456
+    await start(page, JSON.stringify(sample))
+    await page.getByRole('button', { name: '支出の記録', exact: true }).click()
+    for (const date of ['2026-10-18', '2026-10-19']) {
+      const amount = page.locator(`[data-date="${date}"] > strong`)
+      await expect(amount).toBeVisible()
+      const metrics = await amount.evaluate(el => {
+        const range = document.createRange(); range.selectNodeContents(el)
+        const text = range.getBoundingClientRect(), cell = el.parentElement!.getBoundingClientRect()
+        return { lines: range.getClientRects().length, fits: text.left >= cell.left && text.right <= cell.right }
+      })
+      expect(metrics).toEqual({ lines: 1, fits: true })
+    }
+  })
+}
