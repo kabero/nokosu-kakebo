@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "node --import tsx --test src/finance.test.ts",
     "check:dist": "node scripts/check-dist.mjs",
-    "check": "npm test && npm run build && npm run check:dist"
+    "check": "npm test && npm run build && npm run check:dist",
+    "security:scan": "gitleaks git --redact --no-banner --ignore-gitleaks-allow --config .gitleaks.toml --log-opts=--all .",
+    "hooks:install": "git config --local core.hooksPath .githooks"
   },
   "dependencies": {
     "react": "^19.0.0",

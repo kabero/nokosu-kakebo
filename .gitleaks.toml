@@ -1,0 +1,4 @@
+title = "Nokosu Kakeibo secret scanning"
+
+[extend]
+useDefault = true

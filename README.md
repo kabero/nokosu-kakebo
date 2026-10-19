@@ -87,3 +87,15 @@ manifest・PNGアイコン・本番ビルド時に生成するService WorkerでP
 ## デプロイ
 
 Cloudflare PagesとGitHubの直接連携を使います。ビルドコマンドは `npm run check`、出力先は `dist`。設定・公開後の確認・データ移行の詳細は [DEPLOY.md](DEPLOY.md) を参照してください。
+
+## 認証情報の漏洩チェック
+
+Gitleaksの標準ルールで検査します。検出値はログで伏せます。新しくcloneした環境では次を実行してください（macOS）。
+
+```sh
+brew install gitleaks
+npm run hooks:install
+npm run security:scan
+```
+
+有効化したフックは、コミット前にステージ済み変更、push前に全履歴を検査します。Gitleaksがない場合も停止します。GitHub Actionsでもpush・PR時に検査し、Secret Scanning / Push ProtectionはGitHubのリポジトリ設定で有効です。フックは各cloneでの有効化が必要で、`--no-verify`などによる回避を完全には防げません。CIはpush後の検査なので、GitHub側のPush Protectionと組み合わせて使います。
