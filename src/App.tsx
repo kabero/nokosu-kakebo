@@ -50,6 +50,7 @@ export default function App() {
   const summary = summarize(data, period)
   const forecast = forecastSavings(data, period, today)
   const setup = data.setup ?? { paydayConfirmed: data.settings.income > 0, fixedCostsConfirmed: data.costs.some(c => c.kind === 'fixed'), dismissed: false }
+  const setupComplete = data.settings.income > 0 && setup.paydayConfirmed && setup.fixedCostsConfirmed
   const fixedCosts = summary.costs.filter(c => c.kind === 'fixed')
   const previousPeriod = getPeriod(today, data.settings, offset - 1)
   const previousFixedCosts = data.costs.filter(c => c.kind === 'fixed' && c.period === previousPeriod.key)
@@ -146,7 +147,7 @@ export default function App() {
       <div className="page-content">
         {error && <div className="error-banner" role="alert">{error}</div>}
         <div className="page-heading"><div><h1>{view === 'overview' ? '残せるお金' : view === 'history' ? '支出の記録' : view === 'costs' ? '固定費・臨時支出' : view === 'charts' ? 'レポート' : '設定'}</h1></div></div>
-        {!setup.dismissed && view !== 'history' && view !== 'charts' && <details className="setup-disclosure" open={view === 'settings' || view === 'costs'}><summary>初期設定 <span>{[data.settings.income > 0, setup.paydayConfirmed, setup.fixedCostsConfirmed].filter(Boolean).length} / 3</span><ChevronRight size={17} /></summary><SetupSteps steps={[
+        {(!setupComplete || !setup.dismissed) && <details className="setup-disclosure" open={!setupComplete || view === 'settings' || view === 'costs'}><summary>初期設定 <span>{[data.settings.income > 0, setup.paydayConfirmed, setup.fixedCostsConfirmed].filter(Boolean).length} / 3</span><ChevronRight size={17} /></summary><SetupSteps steps={[
           { label: '毎月の手取り', value: data.settings.income > 0 ? yen(data.settings.income) : '未設定', done: data.settings.income > 0, onClick: () => { setView('settings'); setSetupField('income') } },
           { label: '給料日', value: `毎月${data.settings.payday}日${setup.paydayConfirmed ? '' : '（要確認）'}`, done: setup.paydayConfirmed, onClick: () => { setView('settings'); setSetupField('payday') } },
           { label: '固定費', value: setup.fixedCostsConfirmed ? fixedCosts.length ? `${fixedCosts.length}件 · ${yen(summary.fixed)}` : '固定費なし' : '登録、または「なし」', done: setup.fixedCostsConfirmed, onClick: () => setView('costs') },
