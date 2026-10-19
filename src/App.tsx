@@ -4,6 +4,7 @@ import { dateKey, dayCount, getPeriod, initialData, parseDate, summarize, foreca
 
 import ExpenseCalendar from './ExpenseCalendar'
 import SetupSteps from './SetupSteps'
+import BeginnerMark from './BeginnerMark'
 import BrandMark from './BrandMark'
 import PaydayCountdown from './PaydayCountdown'
 import InstallPrompt from './InstallPrompt'
@@ -152,10 +153,10 @@ export default function App() {
       <div className="page-content">
         {error && <div className="error-banner" role="alert">{error}</div>}
         <div className="page-heading"><div><h1>{view === 'overview' ? '残せるお金' : view === 'history' ? '支出の記録' : view === 'costs' ? '固定費・臨時支出' : view === 'charts' ? 'レポート' : '設定'}</h1></div></div>
-        {(!setupComplete || !setup.dismissed) && <details className="setup-disclosure" open={!setupComplete || view === 'settings' || view === 'costs'}><summary>初期設定 <span>{setupComplete ? '完了' : `残り${[data.settings.income > 0, setup.paydayConfirmed, setup.fixedCostsConfirmed].filter(value => !value).length}項目`}</span><ChevronRight size={17} /></summary><SetupSteps steps={[
+        {(!setupComplete || !setup.dismissed) && <details className="setup-disclosure" open={!setupComplete || view === 'settings' || view === 'costs'}><summary><strong className="setup-heading-label"><BeginnerMark />初期設定</strong><span>{setupComplete ? '完了' : `残り${[data.settings.income > 0, setup.paydayConfirmed, setup.fixedCostsConfirmed].filter(value => !value).length}項目`}</span><ChevronRight size={17} /></summary><SetupSteps steps={[
           { label: '毎月の手取り', value: data.settings.income > 0 ? yen(data.settings.income) : '未設定', done: data.settings.income > 0, onClick: () => { setView('settings'); setSetupField('income') } },
-          { label: '給料日', value: `毎月${data.settings.payday}日${setup.paydayConfirmed ? '' : '（要確認）'}`, done: setup.paydayConfirmed, onClick: () => { setView('settings'); setSetupField('payday') } },
-          { label: '固定費', value: setup.fixedCostsConfirmed ? fixedCosts.length ? `${fixedCosts.length}件 · ${yen(summary.fixed)}` : '固定費なし' : '登録、または「なし」', done: setup.fixedCostsConfirmed, onClick: () => setView('costs') },
+          { label: '給料日', value: `${data.settings.payday}日${setup.paydayConfirmed ? '' : '・要確認'}`, done: setup.paydayConfirmed, onClick: () => { setView('settings'); setSetupField('payday') } },
+          { label: '固定費', value: setup.fixedCostsConfirmed ? fixedCosts.length ? `${fixedCosts.length}件 · ${yen(summary.fixed)}` : '固定費なし' : '未設定', done: setup.fixedCostsConfirmed, onClick: () => setView('costs') },
         ]} onDismiss={() => setData(d => ({ ...d, setup: { ...setup, dismissed: true } }))} /></details>}
         <InstallPrompt recorded={data.loggedDates.length > 0 || data.expenses.length > 0} showEntry={view === 'settings' || view === 'overview'} promoted={view === 'overview'} />
         {view !== 'settings' && <div className="period-bar period-selector"><div className="period-info"><div className="period-title"><span>{period.year}年</span><strong>{periodLabel}</strong></div><div className="period-range"><span>{shortDate(period.start)} – {shortDate(period.end)}</span>{offset === 0 && <span className="period-current">今の月期</span>}</div>{offset < 0 && <button className="period-return" onClick={() => { setCalendarDate(null); setOffset(0) }}>今の月期に戻る</button>}</div><div className="period-arrows" role="group" aria-label="月期を切り替える"><button disabled={period.start.getFullYear() <= 2020} onClick={() => { setCalendarDate(null); setOffset(o => o - 1) }} aria-label="前の期間"><ChevronLeft size={20} /></button><button disabled={offset >= 0} onClick={() => { setCalendarDate(null); setOffset(o => o + 1) }} aria-label="次の期間"><ChevronRight size={20} /></button></div></div>}
