@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Download, X, ChevronRight } from 'lucide-react'
 import BrandMark from './BrandMark'
+import './install-promotion.css'
 
 type InstallEvent = Event & { prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }> }
 const KEY = 'nokori-install-v1'
@@ -8,10 +9,11 @@ const standalone = () => window.matchMedia('(display-mode: standalone)').matches
 const read = () => { try { return localStorage.getItem(KEY) } catch { return null } }
 const write = (value: string) => { try { localStorage.setItem(KEY, value) } catch { /* 今回の表示状態はメモリにも保持する */ } }
 
-export default function InstallPrompt({ recorded, showEntry }: { recorded: boolean; showEntry: boolean }) {
+export default function InstallPrompt({ recorded, showEntry, promoted = false }: { recorded: boolean; showEntry: boolean; promoted?: boolean }) {
   const [event, setEvent] = useState<InstallEvent | null>(null)
   const [installed, setInstalled] = useState(() => standalone() || read() === 'installed')
   const [open, setOpen] = useState(false)
+  const [dismissed, setDismissed] = useState(() => read() === 'dismissed')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [firstSave, setFirstSave] = useState(false)
@@ -48,7 +50,7 @@ export default function InstallPrompt({ recorded, showEntry }: { recorded: boole
     if (open) { opener.current = document.activeElement as HTMLElement; dialog.current?.showModal() }
     else { dialog.current?.close(); opener.current?.focus() }
   }, [open])
-  function close() { handled.current = true; write(installed ? 'installed' : 'dismissed'); setOpen(false) }
+  function close() { setDismissed(true); handled.current = true; write(installed ? 'installed' : 'dismissed'); setOpen(false) }
   async function install() {
     if (!event) return
     setBusy(true)
@@ -60,10 +62,12 @@ export default function InstallPrompt({ recorded, showEntry }: { recorded: boole
     } catch { setEvent(null); setMessage('ブラウザのメニューから追加できます。') }
     finally { setBusy(false) }
   }
+  const showPromotion = promoted && !dismissed && (ios || !!event)
+  const openGuide = () => { setMessage(''); setOpen(true) }
   return <>
-    {showEntry && !installed && <button className="install-settings" onClick={() => { setMessage(''); setOpen(true) }}><Download size={16} />ホーム画面に追加 <ChevronRight size={16} /></button>}
+    {showEntry && !installed && (showPromotion ? <section className="install-promotion" aria-label="ホーム画面から使う"><div className="install-promotion-icon"><BrandMark /></div><div className="install-promotion-copy"><strong>次からはアイコンをタップするだけ</strong><p>ブラウザで探さず 家計簿を直接開けます</p><button className="primary-button" onClick={openGuide}>ホーム画面に追加 <ChevronRight size={15} /></button></div><button className="icon-button install-promotion-close" aria-label="追加の案内を閉じる" onClick={() => { setDismissed(true); handled.current = true; write('dismissed') }}><X size={17} /></button></section> : <button className="install-settings" onClick={openGuide}><Download size={16} />ホーム画面に追加 <ChevronRight size={16} /></button>)}
     <dialog className="install-dialog" ref={dialog} aria-labelledby="install-title" onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}>
-      <div className="install-content"><button className="icon-button install-close" aria-label="閉じる" onClick={close}><X size={19} /></button><BrandMark className="install-mark" /><h2 id="install-title">次の記録を、すぐ開けるように。</h2><p>ホーム画面に追加すると、アイコンから開けます。</p>
+      <div className="install-content"><button className="icon-button install-close" aria-label="閉じる" onClick={close}><X size={19} /></button><BrandMark className="install-mark" /><h2 id="install-title">アイコンから家計簿を開く</h2><p>ブラウザを開いて探す手間がなくなります。</p>
         {event ? <button className="primary-button full-width" disabled={busy} onClick={install}><Download size={16} />ホーム画面に追加</button> : ios ? <><ol><li>ブラウザの共有メニューを開く</li><li>「ホーム画面に追加」を選ぶ</li><li>「追加」を押す</li></ol><p>項目が見つからない場合はSafariで開いてください。</p></> : <p>ブラウザのメニューにある「インストール」または「ホーム画面に追加」を選んでください。項目がない場合は、対応する別のブラウザでお試しください。</p>}
         {message && <p role="status">{message}</p>}
         <button className="text-button install-later" onClick={close}>閉じる</button>
