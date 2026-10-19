@@ -86,7 +86,7 @@ manifest・PNGアイコン・本番ビルド時に生成するService WorkerでP
 
 ## デプロイ
 
-Cloudflare PagesとGitHubの直接連携を使います。ビルドコマンドは `npm run check`、出力先は `dist`。設定・公開後の確認・データ移行の詳細は [DEPLOY.md](DEPLOY.md) を参照してください。
+Cloudflare WorkersとGitHubの直接連携を使います。ビルドコマンドは `npm run check`、出力先は `dist`。設定・公開後の確認・データ移行の詳細は [DEPLOY.md](DEPLOY.md) を参照してください。
 
 ## 認証情報の漏洩チェック
 
@@ -102,4 +102,4 @@ npm run security:scan
 
 ## CI
 
-GitHub Actionsはpush・PR時に `npm ci` → テスト → 本番ビルド → Pages公開ファイル検査を実行します。別の `Secret scan` ワークフローでGitleaksも実行します。Actionsは読み取り権限のみで、デプロイ用のSecretsは不要です。Cloudflare側でも `npm run check` を実行します。CI成功をマージ条件にする場合は、GitHubのブランチルールで `Test and build` と `Gitleaks` を必須チェックに指定してください。
+GitHub Actionsはpush・PR時に `npm ci` → テスト → 本番ビルド → 公開ファイル検査を実行します。別の `Secret scan` ワークフローでGitleaksも実行します。Actionsは読み取り権限のみで、デプロイ用のSecretsは不要です。Cloudflare側でも `npm run check` を実行します。CI成功をマージ条件にする場合は、GitHubのブランチルールで `Test and build` と `Gitleaks` を必須チェックに指定してください。
