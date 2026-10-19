@@ -10,7 +10,7 @@ Cloudflareで **Workers & Pages → アプリケーションを作成 → Gitリ
 
 | 設定 | 値 |
 | --- | --- |
-| プロジェクト名 | `nokosu-kakebo` |
+| Worker名 | `app` |
 | 本番ブランチ | `master`（現在のローカルブランチ） |
 | デプロイコマンド | `npx wrangler deploy` |
 | ビルドコマンド | `npm run check` |
