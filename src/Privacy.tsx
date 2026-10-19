@@ -6,9 +6,9 @@ import { adsEnabled } from './ads'
 
 export default function Privacy() {
   return <div className="privacy-page">
-    <header className="privacy-header"><a href="/about/" className="privacy-brand"><BrandMark /><span>のこす家計簿</span></a><a href="/">家計簿を開く <ArrowRight size={16} /></a></header>
+    <header className="privacy-header"><a href="/" className="privacy-brand"><BrandMark /><span>のこす家計簿</span></a><a href="/app/">家計簿を開く <ArrowRight size={16} /></a></header>
     <main className="privacy-main">
-      <a className="privacy-back" href="/about/"><ArrowLeft size={15} />のこす家計簿について</a>
+      <a className="privacy-back" href="/"><ArrowLeft size={15} />のこす家計簿について</a>
       <h1>プライバシーポリシー</h1>
       <p className="privacy-date">制定：2026年10月19日／最終更新：2026年10月20日</p>
       <p className="privacy-lead">のこす家計簿（以下「本サービス」）は、入力した家計データを、お使いのブラウザにのみ保存する家計簿です。このページでは、保存する情報とその取り扱いについて説明します。</p>
@@ -24,8 +24,8 @@ export default function Privacy() {
       <section><h2>8. 利用する端末について</h2><p>本サービスには、記録専用のパスワードロックはありません。同じ端末・ブラウザを使う人が記録を見られる場合があります。端末のロックを利用し、共用する端末では保存内容やバックアップの取り扱いにご注意ください。</p></section>
       <section><h2>9. このポリシーの変更</h2><p>機能や情報の取り扱いを変更する場合は、その内容に合わせて本ページを更新し、更新日を記載します。重要な変更がある場合は、本サービス上でお知らせします。</p></section>
       {(siteInfo.operatorName || siteInfo.contactEmail || siteInfo.contactUrl) && <section><h2>10. 運営者・お問い合わせ</h2>{siteInfo.operatorName && <p>運営者：{siteInfo.operatorName}</p>}{siteInfo.contactEmail && <p><a href={`mailto:${siteInfo.contactEmail}`}>{siteInfo.contactEmail}</a></p>}{siteInfo.contactUrl && <p><a href={siteInfo.contactUrl}>お問い合わせ</a></p>}</section>}
-      <a className="privacy-return" href="/">家計簿を開く <ArrowRight size={17} /></a>
+      <a className="privacy-return" href="/app/">家計簿を開く <ArrowRight size={17} /></a>
     </main>
-    <footer className="privacy-footer"><a href="/about/">のこす家計簿</a><span>プライバシーポリシー</span></footer>
+    <footer className="privacy-footer"><a href="/">のこす家計簿</a><span>プライバシーポリシー</span></footer>
   </div>
 }

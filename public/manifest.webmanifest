@@ -3,7 +3,7 @@
   "name": "のこす家計簿",
   "short_name": "のこす家計簿",
   "lang": "ja",
-  "start_url": "/",
+  "start_url": "/app/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f8f9f6",

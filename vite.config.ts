@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
     generateBundle(_, bundle) {
       const assets = Object.keys(bundle).filter(name => name.startsWith('assets/'))
       const version = createHash('sha256').update(assets.join('|')).digest('hex').slice(0, 12)
-      const urls = ['/', '/index.html', '/about/', '/privacy/', '/tips/', ...assets.map(name => '/' + name), '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon.svg']
+      const urls = ['/', '/index.html', '/app/', '/about/', '/privacy/', '/tips/', ...assets.map(name => '/' + name), '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon.svg']
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: `
 const CACHE = 'nokori-shell-${version}';
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(${JSON.stringify(urls)}))));
@@ -36,7 +36,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (event.request.mode === 'navigate') {
-    const routes = {'/': '/', '/index.html': '/', '/about': '/about/', '/about/': '/about/', '/privacy': '/privacy/', '/privacy/': '/privacy/', '/tips': '/tips/', '/tips/': '/tips/'};
+    const routes = {'/': '/', '/index.html': '/', '/app': '/app/', '/app/': '/app/', '/app/index.html': '/app/', '/about': '/about/', '/about/': '/about/', '/privacy': '/privacy/', '/privacy/': '/privacy/', '/tips': '/tips/', '/tips/': '/tips/'};
     const route = routes[url.pathname];
     if (route) event.respondWith(caches.open(CACHE).then(cache => cache.match(route)).then(hit => hit || fetch(event.request)));
   } else if (${JSON.stringify(urls)}.includes(url.pathname)) {
@@ -46,7 +46,8 @@ self.addEventListener('fetch', event => {
     },
   }],
   build: { rollupOptions: { input: {
-    app: fileURLToPath(new URL('./index.html', import.meta.url)),
+    landing: fileURLToPath(new URL('./index.html', import.meta.url)),
+    app: fileURLToPath(new URL('./app/index.html', import.meta.url)),
     about: fileURLToPath(new URL('./about/index.html', import.meta.url)),
     tips: fileURLToPath(new URL('./tips/index.html', import.meta.url)),
     privacy: fileURLToPath(new URL('./privacy/index.html', import.meta.url)),

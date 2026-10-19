@@ -9,7 +9,7 @@ import './surfaces.css'
 import './print.css'
 
 const isTips = /^\/tips\/?$/.test(window.location.pathname)
-const isLanding = /^\/about\/?$/.test(window.location.pathname)
+const isLanding = window.location.pathname === '/' || window.location.pathname === '/index.html' || /^\/about\/?$/.test(window.location.pathname)
 const isPrivacy = /^\/privacy\/?$/.test(window.location.pathname)
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{isTips ? <Tips /> : isPrivacy ? <Privacy /> : isLanding ? <Landing /> : <App />}</React.StrictMode>)
 
