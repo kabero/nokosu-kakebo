@@ -64,7 +64,7 @@ export default function InstallPrompt({ recorded, showEntry }: { recorded: boole
     {showEntry && !installed && <button className="install-settings" onClick={() => { setMessage(''); setOpen(true) }}><Download size={16} />ホーム画面に追加 <ChevronRight size={16} /></button>}
     <dialog className="install-dialog" ref={dialog} aria-labelledby="install-title" onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}>
       <div className="install-content"><button className="icon-button install-close" aria-label="閉じる" onClick={close}><X size={19} /></button><BrandMark className="install-mark" /><h2 id="install-title">次の記録を、すぐ開けるように。</h2><p>ホーム画面に追加すると、アイコンから開けます。</p>
-        {event ? <button className="primary-button full-width" disabled={busy} onClick={install}><Download size={16} />ホーム画面に追加</button> : ios ? <ol><li>Safariでこのページを開く</li><li>共有メニューを開く</li><li>「ホーム画面に追加」を選ぶ</li></ol> : <p>ブラウザのメニューにある「インストール」または「ホーム画面に追加」を選んでください。項目がない場合は、対応する別のブラウザでお試しください。</p>}
+        {event ? <button className="primary-button full-width" disabled={busy} onClick={install}><Download size={16} />ホーム画面に追加</button> : ios ? <><ol><li>ブラウザの共有メニューを開く</li><li>「ホーム画面に追加」を選ぶ</li><li>「追加」を押す</li></ol><p>項目が見つからない場合はSafariで開いてください。</p></> : <p>ブラウザのメニューにある「インストール」または「ホーム画面に追加」を選んでください。項目がない場合は、対応する別のブラウザでお試しください。</p>}
         {message && <p role="status">{message}</p>}
         <button className="text-button install-later" onClick={close}>閉じる</button>
       </div>
