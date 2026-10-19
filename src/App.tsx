@@ -139,7 +139,7 @@ export default function App() {
       <div className="nav-label">家計簿</div>
       <nav aria-label="メインメニュー">{([
         ['overview', LayoutDashboard, '残せるお金'], ['history', ReceiptText, '支出の記録'], ['costs', House, '固定費・臨時支出'], ['charts', ChartNoAxesCombined, 'レポート'], ['settings', SettingsIcon, '設定'],
-      ] as const).map(([id, Icon, label]) => <button key={id} className={`nav-item ${id === 'settings' ? 'mobile-settings' : ''} ${view === id ? 'active' : ''}`} onClick={() => { setCalendarDate(null); setView(id) }}><Icon size={19} strokeWidth={1.7} />{label}{view === id && <span className="nav-dot" />}</button>)}</nav>
+      ] as const).map(([id, Icon, label]) => <button key={id} className={`nav-item ${id === 'settings' ? 'mobile-settings' : ''} ${view === id ? 'active' : ''}`} aria-label={label} onClick={() => { setCalendarDate(null); setView(id) }}><Icon size={19} strokeWidth={1.7} /><span className="nav-label-full">{label}</span>{id === 'costs' && <span className="nav-label-short" aria-hidden="true">固定費・臨時</span>}{view === id && <span className="nav-dot" />}</button>)}</nav>
       <div className="sidebar-bottom"><div className="sidebar-utilities"><button className={`nav-item ${view === 'settings' ? 'active' : ''}`} onClick={() => { setCalendarDate(null); setView('settings') }}><SettingsIcon size={17} strokeWidth={1.7} />設定</button><a href="/tips/">効果的な使い方 <ChevronRight size={14} /></a><a href="/about/">このアプリについて <ChevronRight size={14} /></a><a href="/privacy/">プライバシーポリシー <ChevronRight size={14} /></a></div><span><ShieldCheck size={13} /> このブラウザに自動保存</span></div>
     </aside>
     <main>
@@ -147,7 +147,7 @@ export default function App() {
       <div className="page-content">
         {error && <div className="error-banner" role="alert">{error}</div>}
         <div className="page-heading"><div><h1>{view === 'overview' ? '残せるお金' : view === 'history' ? '支出の記録' : view === 'costs' ? '固定費・臨時支出' : view === 'charts' ? 'レポート' : '設定'}</h1></div></div>
-        {(!setupComplete || !setup.dismissed) && <details className="setup-disclosure" open={!setupComplete || view === 'settings' || view === 'costs'}><summary>初期設定 <span>{[data.settings.income > 0, setup.paydayConfirmed, setup.fixedCostsConfirmed].filter(Boolean).length} / 3</span><ChevronRight size={17} /></summary><SetupSteps steps={[
+        {(!setupComplete || !setup.dismissed) && <details className="setup-disclosure" open={!setupComplete || view === 'settings' || view === 'costs'}><summary>初期設定 <span>{setupComplete ? '完了' : `残り${[data.settings.income > 0, setup.paydayConfirmed, setup.fixedCostsConfirmed].filter(value => !value).length}項目`}</span><ChevronRight size={17} /></summary><SetupSteps steps={[
           { label: '毎月の手取り', value: data.settings.income > 0 ? yen(data.settings.income) : '未設定', done: data.settings.income > 0, onClick: () => { setView('settings'); setSetupField('income') } },
           { label: '給料日', value: `毎月${data.settings.payday}日${setup.paydayConfirmed ? '' : '（要確認）'}`, done: setup.paydayConfirmed, onClick: () => { setView('settings'); setSetupField('payday') } },
           { label: '固定費', value: setup.fixedCostsConfirmed ? fixedCosts.length ? `${fixedCosts.length}件 · ${yen(summary.fixed)}` : '固定費なし' : '登録、または「なし」', done: setup.fixedCostsConfirmed, onClick: () => setView('costs') },

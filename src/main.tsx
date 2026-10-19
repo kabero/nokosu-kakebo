@@ -5,6 +5,7 @@ import Landing from './Landing'
 import Privacy from './Privacy'
 import Tips from './Tips'
 import './style.css'
+import './surfaces.css'
 
 const isTips = /^\/tips\/?$/.test(window.location.pathname)
 const isLanding = /^\/about\/?$/.test(window.location.pathname)
