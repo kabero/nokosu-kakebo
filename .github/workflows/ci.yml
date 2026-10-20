@@ -36,7 +36,8 @@ jobs:
       - name: Verify deployment outputs
         run: npm run check:dist
       - name: Install test browsers
-        run: npx playwright install --with-deps chromium webkit
+        # Tests use headless Chromium; skip the unused full browser download.
+        run: npx playwright install --with-deps --only-shell chromium webkit
       - name: Test storage in Chromium and WebKit
         run: npx playwright test
       - name: Save browser test failure reports
