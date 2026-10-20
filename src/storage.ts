@@ -1,5 +1,6 @@
 import { carryForwardFixedCosts, initialData, migrateLegacyCosts, validateData, type Data } from './finance'
 
+export const MAX_BACKUP_BYTES = 16_000_000
 export const STORAGE_KEY = 'yohaku-money-v1'
 export const PREVIOUS_KEY = `${STORAGE_KEY}:previous`
 export const UNREADABLE_KEY = `${STORAGE_KEY}:unreadable`
@@ -23,7 +24,7 @@ export function prepareData(raw: string, today: Date): Data {
   return carryForwardFixedCosts(migrateLegacyCosts(parse(raw), today), today)
 }
 export function parseBackup(raw: string, today: Date): Data {
-  if (new Blob([raw]).size > 5_000_000) throw new Error('Backup too large')
+  if (new Blob([raw]).size > MAX_BACKUP_BYTES) throw new Error('Backup too large')
   return prepareData(raw, today)
 }
 

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DataStorage, PREVIOUS_KEY, STORAGE_KEY, UNREADABLE_KEY, parseBackup, prepareData, storageMessages, type LockRunner } from './storage'
+import { DataStorage, MAX_BACKUP_BYTES, PREVIOUS_KEY, STORAGE_KEY, UNREADABLE_KEY, parseBackup, prepareData, storageMessages, type LockRunner } from './storage'
 import { initialData, parseDate, validateData } from './finance'
 
 const today = parseDate('2026-10-20')
@@ -194,9 +194,9 @@ test('バックアップのJSON往復で全項目が保持され、壊れたフ�
   const data = prepareData(JSON.stringify(fixture()), today)
   assert.deepEqual(parseBackup(JSON.stringify(data), today), data)
   for (const bad of ['', '\uFEFF{}', '{', 'null', JSON.stringify({ ...fixture(), version: 999 })]) assert.throws(() => parseBackup(bad, today))
-  assert.throws(() => parseBackup(JSON.stringify({ ...fixture(), padding: 'x'.repeat(5_000_000) }), today))
-  const multibyte = JSON.stringify({ ...fixture(), padding: 'あ'.repeat(1_700_000) })
-  assert.ok(multibyte.length < 5_000_000)
+  assert.throws(() => parseBackup(JSON.stringify({ ...fixture(), padding: 'x'.repeat(MAX_BACKUP_BYTES) }), today))
+  const multibyte = JSON.stringify({ ...fixture(), padding: 'あ'.repeat(Math.ceil(MAX_BACKUP_BYTES / 3)) })
+  assert.ok(multibyte.length < MAX_BACKUP_BYTES)
   assert.throws(() => parseBackup(multibyte, today))
 })
 
