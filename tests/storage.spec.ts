@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { largeHistory } from './fixtures/largeHistory'
 import { readFile } from 'node:fs/promises'
 
 const KEY = 'yohaku-money-v1', PREVIOUS = `${KEY}:previous`, APP = 'http://127.0.0.1:4181', SITE = 'http://127.0.0.1:4180'
@@ -427,3 +428,101 @@ for (const touch of [false, true]) {
     } finally { await context.close() }
   })
 }
+
+test('30年分を実ブラウザで読み込み、追加・再読込・バックアップ復元で全履歴を保持する', async ({ page, browser }) => {
+  test.setTimeout(60000)
+  const history = largeHistory(30, 1)
+  const started = Date.now()
+  await start(page, JSON.stringify(history))
+  expect(await data(page)).toEqual(history)
+  await inputToday(page, '777')
+  await saveDay(page)
+  await expect.poll(async () => (await data(page)).expenses.length).toBe(history.expenses.length + 1)
+  const saved = await data(page)
+  expect(saved.expenses.slice(0, -1)).toEqual(history.expenses)
+  expect(saved.costs).toEqual(history.costs)
+  expect(saved.loggedDates).toEqual(history.loggedDates)
+  expect(saved.drafts).toEqual(history.drafts)
+  await page.getByRole('button', { name: '支出の記録', exact: true }).click()
+  await expect(page.locator('.expense-calendar')).toBeVisible()
+  await page.getByRole('button', { name: 'レポート', exact: true }).click()
+  await expect(page.locator('.chart-panel').first()).toBeVisible()
+  await page.reload()
+  await expect(page.locator('.savings-card')).toBeVisible()
+  expect(await data(page)).toEqual(saved)
+  await openSettings(page)
+  const backup = await download(page)
+  expect(JSON.parse(backup)).toEqual(saved)
+  const fresh = await browser.newContext({ baseURL: APP, timezoneId: 'Asia/Tokyo', serviceWorkers: 'block' })
+  try {
+    const target = await fresh.newPage()
+    await start(target, null)
+    await openSettings(target)
+    target.once('dialog', dialog => dialog.accept())
+    await importFile(target, backup)
+    await expect.poll(async () => (await data(target)).expenses.length).toBe(saved.expenses.length)
+    expect(await data(target)).toEqual(saved)
+    await target.reload()
+    await expect(target.locator('.savings-card')).toBeVisible()
+    expect(await data(target)).toEqual(saved)
+  } finally { await fresh.close() }
+  test.info().annotations.push({ type: 'large-history', description: `${history.expenses.length} expenses, ${history.costs.length} costs, ${new Blob([backup]).size} export bytes; UI round trip ${Date.now() - started} ms (diagnostic only)` })
+})
+
+
+test('実際のブラウザ保存領域を満杯にしても30年分の本体を壊さず未保存分を取り出せる', async ({ page }) => {
+  test.setTimeout(60000)
+  const history = largeHistory(30, 1)
+  await start(page, JSON.stringify(history))
+  const original = await raw(page)
+  const exhausted = await page.evaluate(() => {
+    let value = '', chunk = 256 * 1024
+    while (chunk >= 1 && value.length < 10 * 1024 * 1024) {
+      try { localStorage.setItem('__quota_fill', value + 'x'.repeat(chunk)); value += 'x'.repeat(chunk) }
+      catch (error) {
+        if (!(error instanceof DOMException) || error.name !== 'QuotaExceededError') throw error
+        if (chunk === 1) return true
+        chunk = Math.floor(chunk / 2)
+      }
+    }
+    return false
+  })
+  expect(exhausted).toBe(true)
+  await inputToday(page, '9999')
+  await expect(page.getByRole('alert')).toContainText('保存できませんでした')
+  await saveDay(page)
+  expect(await raw(page)).toBe(original)
+  await openSettings(page)
+  const unsaved = JSON.parse(await download(page)) as typeof history
+  expect(unsaved.expenses.length).toBe(history.expenses.length + 1)
+  expect(unsaved.expenses.at(-1)!.amount).toBe(9999)
+  expect(unsaved.expenses.slice(0, -1)).toEqual(history.expenses)
+  expect(unsaved.costs).toEqual(history.costs)
+  page.once('dialog', dialog => dialog.accept())
+  await page.reload()
+  await expect(page.locator('.savings-card')).toBeVisible()
+  expect(await data(page)).toEqual(history)
+})
+
+test('5MB超の日本語メモ付きバックアップを実画面から書き出し、空のブラウザへ復元する', async ({ page, browser }) => {
+  test.setTimeout(60000)
+  const history = largeHistory(10, 1, 480)
+  await start(page, JSON.stringify(history))
+  await openSettings(page)
+  const backup = await download(page)
+  expect(Buffer.byteLength(backup, 'utf8')).toBeGreaterThan(5_000_000)
+  expect(JSON.parse(backup)).toEqual(history)
+  const fresh = await browser.newContext({ baseURL: APP, timezoneId: 'Asia/Tokyo', serviceWorkers: 'block' })
+  try {
+    const target = await fresh.newPage()
+    await start(target, null)
+    await openSettings(target)
+    target.once('dialog', dialog => dialog.accept())
+    await importFile(target, backup)
+    await expect.poll(async () => (await data(target)).expenses.length).toBe(history.expenses.length)
+    expect(await data(target)).toEqual(history)
+    await target.reload()
+    await expect(target.locator('.savings-card')).toBeVisible()
+    expect(await data(target)).toEqual(history)
+  } finally { await fresh.close() }
+})
