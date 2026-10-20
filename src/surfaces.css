@@ -30,3 +30,7 @@
 .landing .lp-hero-copy>.lp-cta+.lp-start-note{margin-top:7px;font-size:11px}.landing .lp-hero-copy>.lp-quick-trigger{margin-top:12px}@media(max-width:700px){.landing .lp-hero-copy>.lp-cta+.lp-start-note{margin-top:6px;font-size:10px}.landing .lp-hero-copy>.lp-quick-trigger{margin-top:8px}.landing .lp-hero-copy>.lp-privacy-promise{margin-top:7px}}
 
 .app-shell .cost-delete{color:#b44b3f}.app-shell .cost-delete:hover{background:#fff0ed;color:#92392e}
+
+.toast{max-width:calc(100vw - 32px);white-space:normal;gap:10px}.toast>svg{flex-shrink:0}.toast>span{min-width:0}.toast>button{flex-shrink:0;background:none;border:0;border-left:1px solid #ffffff55;color:inherit;padding:8px 0 8px 12px;min-height:44px;text-decoration:underline;text-underline-offset:4px;font-weight:600}
+
+@media(max-width:650px){.calendar-dialog{position:fixed;top:auto;bottom:var(--editor-bottom,0px);margin:0;max-height:calc(var(--editor-height,100dvh) - 16px);overflow-y:auto;scroll-padding:16px}.calendar-editor input{scroll-margin:16px}}
