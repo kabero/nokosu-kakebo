@@ -44,6 +44,7 @@ export default function App() {
   const [offset, setOffset] = useState(0)
   const [modal, setModal] = useState<Modal>(null)
   const [toast, setToast] = useState('')
+  const toastRef = useRef<HTMLDivElement>(null)
   const [calendarDate, setCalendarDate] = useState<string | null>(null)
   const [setupField, setSetupField] = useState<'income' | 'payday' | null>(null)
   const incomeInput = useRef<HTMLInputElement>(null)
@@ -103,7 +104,17 @@ export default function App() {
     document.addEventListener('visibilitychange', update)
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', update) }
   }, [])
-  useEffect(() => { if (!toast) return; const timer = setTimeout(() => { setToast(''); setUndo(null) }, undo ? 10000 : 3500); return () => clearTimeout(timer) }, [toast, undo])
+  useEffect(() => { if (!toast) return; const timer = setTimeout(() => { setToast(''); setUndo(null) }, undo ? 5000 : 3500); return () => clearTimeout(timer) }, [toast, undo])
+  useEffect(() => {
+    if (!undo) return
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && !toastRef.current?.contains(event.target)) {
+        setToast(''); setUndo(null)
+      }
+    }
+    document.addEventListener('pointerdown', dismiss, true)
+    return () => document.removeEventListener('pointerdown', dismiss, true)
+  }, [undo])
   useEffect(() => {
     if (modal) { openerRef.current = document.activeElement as HTMLElement; dialogRef.current?.showModal() }
     else { dialogRef.current?.close(); openerRef.current?.focus() }
@@ -214,6 +225,6 @@ export default function App() {
     <dialog ref={dialogRef} onCancel={() => setModal(null)} onClick={e => { if (e.target === e.currentTarget) setModal(null) }} aria-labelledby="dialog-title">{modal && <div className="modal-content"><div className="section-heading"><h2 id="dialog-title">{modal.type === 'expense' ? modal.expense ? '支出を編集' : '金額を入力' : modal.kind === 'fixed' ? modal.cost ? '固定費を編集' : '固定費を追加' : modal.cost ? '臨時支出を編集' : '臨時支出を追加'}</h2><button className="icon-button" onClick={() => setModal(null)} aria-label="閉じる"><X size={20} /></button></div><form className="entry-form" onSubmit={modal.type === 'expense' ? saveExpense : saveCost}>
       {modal.type === 'expense' ? <><label>日付<input name="date" type="date" min="2020-01-01" max={todayKey} defaultValue={modal.expense?.date || (offset === 0 ? todayKey : dateKey(period.end))} required /></label><label>使った金額<div className="input-with-unit"><input autoFocus name="amount" type="number" min="1" max="1000000000" step="1" placeholder="0" defaultValue={modal.expense?.amount} required /><span>円</span></div></label><label>メモ <span className="optional">任意</span><input name="note" maxLength={100} placeholder="例：ランチ、おやつ、帰りの電車" defaultValue={modal.expense?.note} /></label></> : <><details className="inline-help"><summary>日々の支出との分け方 <ChevronRight size={16} /></summary><p>ここに登録した分は、日々の支出に重ねて入力しません。二重に引かれて、残せる額が少なくなるためです。</p></details><label>項目名<input autoFocus name="name" defaultValue={modal.cost?.name} required maxLength={100} placeholder={modal.kind === 'fixed' ? '例：家賃、電気代' : '例：友人へのプレゼント'} /></label><label>金額<div className="input-with-unit"><input name="amount" defaultValue={modal.cost?.amount} type="number" min="1" max="1000000000" step="1" placeholder="0" required /><span>円</span></div></label></>}
       <button className="primary-button full-width" type="submit"><Check size={17} />{modal.type === 'expense' ? '記録を保存' : '支出を保存'}</button></form></div>}</dialog>
-    {toast && <div className="toast" role="status"><Check size={17} /><span>{toast}</span>{undo && <button type="button" onClick={undoChange}>元に戻す</button>}</div>}
+    {toast && <div ref={toastRef} className="toast" role="status"><Check size={17} /><span>{toast}</span>{undo && <button type="button" onClick={undoChange}>元に戻す</button>}</div>}
   </div>
 }
