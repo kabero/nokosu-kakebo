@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type SetStateAction } from 'react'
 import { ChartNoAxesCombined, Check, ChevronLeft, ChevronRight, Download, House, LayoutDashboard, Plus, ReceiptText, Settings as SettingsIcon, ShieldCheck, Trash2, Upload, X } from 'lucide-react'
 import { dateKey, dayCount, getPeriod, initialData, parseDate, summarize, forecastSavings, copyFixedCosts, carryForwardFixedCosts, markFixedCostPeriod, type Cost, type Data, type Expense, recordDailyAmount, type Draft } from './finance'
 
@@ -23,7 +23,20 @@ type Modal = { type: 'expense'; expense?: Expense } | { type: 'cost'; kind: 'fix
 export default function App() {
   const [storage] = useState(() => new DataStorage(() => window.localStorage, navigator.locks ? task => navigator.locks.request(STORAGE_LOCK, task) : null, new Date()))
   const loaded = storage.loaded
-  const [data, setData] = useState<Data>(loaded.data)
+  const [data, updateData] = useState<Data>(loaded.data)
+  const [undo, setUndo] = useState<{ before: Data } | null>(null)
+  function setData(next: SetStateAction<Data>) { setUndo(null); updateData(next) }
+  function changeData(next: (current: Data) => Data, message: string) {
+    updateData(next)
+    notify(message)
+    if (!storageBlocked) setUndo({ before: data })
+  }
+  function undoChange() {
+    if (!undo || storageBlocked) return
+    const previous = undo.before
+    setData(previous)
+    notify('元に戻しました')
+  }
   const [storageBlocked, setStorageBlocked] = useState(!!loaded.error)
   const [error, setError] = useState(loaded.error)
   const [view, setView] = useState<View>(() => window.location.hash === '#usage' ? 'settings' : 'overview')
@@ -57,20 +70,20 @@ export default function App() {
   const todayLogged = data.loggedDates.includes(todayKey) || todayExpenses.length > 0
   const resumeDraft = Object.entries(data.drafts ?? {}).filter(([key]) => key <= todayKey).sort((a, b) => b[1].updatedAt - a[1].updatedAt)[0]
   const completed = Math.min(period.totalDays, Math.max(0, dayCount(period.start, today)))
-  const notify = (message: string) => { if (!storageBlocked || message === 'バックアップを書き出しました') setToast(message) }
-  useEffect(() => { setData(d => carryForwardFixedCosts(d, today)) }, [data, today])
+  const notify = (message: string) => { if (!storageBlocked || message === 'バックアップを書き出しました') { setUndo(null); setToast(message) } }
+  useEffect(() => { updateData(d => carryForwardFixedCosts(d, today)) }, [data, today])
   useEffect(() => {
     if (storageBlocked) return
     let active = true
     void storage.save(data).then(result => {
       if (!active) return
-      if (!result.ok) { setStorageBlocked(true); setError(result.error); setToast('') }
+      if (!result.ok) { setStorageBlocked(true); setError(result.error); setToast(''); setUndo(null) }
       else if (!result.skipped) setError('')
     })
     return () => { active = false }
   }, [data, storageBlocked, storage])
   useEffect(() => {
-    const check = () => { const message = storage.checkForExternalChange(); if (message) { setStorageBlocked(true); setError(message); setToast('') } }
+    const check = () => { const message = storage.checkForExternalChange(); if (message) { setStorageBlocked(true); setError(message); setToast(''); setUndo(null) } }
     const changed = (event: StorageEvent) => { if ((event.key === null || event.key === STORAGE_KEY) && event.storageArea === window.localStorage) check() }
     window.addEventListener('storage', changed)
     window.addEventListener('focus', check)
@@ -90,7 +103,7 @@ export default function App() {
     document.addEventListener('visibilitychange', update)
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', update) }
   }, [])
-  useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 3500); return () => clearTimeout(timer) }, [toast])
+  useEffect(() => { if (!toast) return; const timer = setTimeout(() => { setToast(''); setUndo(null) }, undo ? 10000 : 3500); return () => clearTimeout(timer) }, [toast, undo])
   useEffect(() => {
     if (modal) { openerRef.current = document.activeElement as HTMLElement; dialogRef.current?.showModal() }
     else { dialogRef.current?.close(); openerRef.current?.focus() }
@@ -108,8 +121,8 @@ export default function App() {
     const form = new FormData(event.currentTarget)
     const expense: Expense = { id: modal?.type === 'expense' && modal.expense ? modal.expense.id : crypto.randomUUID(), date: String(form.get('date')), amount: Number(form.get('amount')), note: String(form.get('note')).trim() }
     if (!Number.isSafeInteger(expense.amount) || expense.amount <= 0 || expense.amount > 1000000000 || expense.date > todayKey) return
-    setData(d => ({ ...d, expenses: [...d.expenses.filter(e => e.id !== expense.id), expense], loggedDates: [...new Set([...d.loggedDates, expense.date])] }))
-    setModal(null); notify('金額を入力しました')
+    changeData(d => ({ ...d, expenses: [...d.expenses.filter(e => e.id !== expense.id), expense], loggedDates: [...new Set([...d.loggedDates, expense.date])] }), '金額を保存しました')
+    setModal(null)
   }
   function saveCost(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -117,11 +130,7 @@ export default function App() {
     const form = new FormData(event.currentTarget)
     const cost: Cost = { id: modal.cost?.id || crypto.randomUUID(), name: String(form.get('name')).trim(), amount: Number(form.get('amount')), kind: modal.kind, period: period.key }
     if (!cost.name || !Number.isSafeInteger(cost.amount) || cost.amount < 1 || cost.amount > 1000000000) return
-    setData(d => { const updated = { ...d, costs: [...d.costs.filter(c => c.id !== cost.id), cost] }; return cost.kind === 'fixed' ? markFixedCostPeriod(updated, period.key) : updated }); setModal(null); notify('支出を保存しました')
-  }
-  function removeExpense(id: string) {
-    if (!confirm('この支出を削除しますか？ この日は記録済みのままになります。')) return
-    setData(d => ({ ...d, expenses: d.expenses.filter(e => e.id !== id) })); notify('支出を削除しました')
+    changeData(d => { const updated = { ...d, costs: [...d.costs.filter(c => c.id !== cost.id), cost] }; return cost.kind === 'fixed' ? markFixedCostPeriod(updated, period.key) : updated }, '支出を保存しました'); setModal(null)
   }
   function downloadText(text: string, filename: string) {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
@@ -148,10 +157,7 @@ export default function App() {
     } catch { setError('読み込めませんでした。のこす家計簿から書き出した有効な JSON ファイル（5 MB 以下）を選んでください。') }
   }
   const recovery = error ? storage.previousText() : null
-  const expenseList = (expenses: Expense[], limit?: number) => expenses.length ? <div className="expense-list">{[...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit).map(e => <div className="expense-row" key={e.id}>
-    <button className="expense-description" onClick={() => setModal({ type: 'expense', expense: e })}><strong>{e.note || '生活費'}</strong><span>{shortDate(parseDate(e.date))}</span></button>
-    <strong className="expense-amount">{yen(e.amount)}</strong><button className="icon-button delete-expense" aria-label={`${e.note || '生活費'}を削除`} onClick={() => removeExpense(e.id)}><Trash2 size={15} /></button>
-  </div>)}</div> : <div className="empty-state">支出の記録がありません</div>
+
 
   const aboutUrl = siteUrl
 
@@ -195,10 +201,9 @@ export default function App() {
         </>}
         {view === 'charts' && <Charts key={period.key} data={data} period={period} today={today} />}
         {view === 'history' && <>
-          <ExpenseCalendar key={period.key} period={period} today={todayKey} initialDate={calendarDate} expenses={summary.expenses} loggedDates={data.loggedDates} drafts={data.drafts ?? {}} onDraftChange={(date: string, draft: Draft | null) => setData(d => ({ ...d, drafts: draft ? { ...d.drafts, [date]: draft } : Object.fromEntries(Object.entries(d.drafts ?? {}).filter(([key]) => key !== date)) }))} onSave={(date, amount, mode) => { setData(d => recordDailyAmount(d, date, amount, mode)); notify(`${shortDate(parseDate(date))}を保存しました`); if (date === todayKey) { setOffset(0); setCalendarDate(null); setView('overview') } }} onClear={date => { setData(d => ({ ...d, expenses: d.expenses.filter(e => e.date !== date), loggedDates: d.loggedDates.filter(key => key !== date), drafts: Object.fromEntries(Object.entries(d.drafts ?? {}).filter(([key]) => key !== date)) })); notify('未記録に戻しました') }} />
-          {summary.expenses.length > 0 && <details className="entry-details"><summary>明細 <span>{summary.expenses.length}件</span><ChevronRight size={17} /></summary>{expenseList(summary.expenses)}</details>}
+          <ExpenseCalendar key={period.key} period={period} today={todayKey} initialDate={calendarDate} expenses={summary.expenses} loggedDates={data.loggedDates} drafts={data.drafts ?? {}} onDraftChange={(date: string, draft: Draft | null) => setData(d => ({ ...d, drafts: draft ? { ...d.drafts, [date]: draft } : Object.fromEntries(Object.entries(d.drafts ?? {}).filter(([key]) => key !== date)) }))} onSave={(date, amount, mode) => { changeData(d => recordDailyAmount(d, date, amount, mode), `${shortDate(parseDate(date))}を保存しました`); if (date === todayKey) { setOffset(0); setCalendarDate(null); setView('overview') } }} onClear={date => { changeData(d => ({ ...d, expenses: d.expenses.filter(e => e.date !== date), loggedDates: d.loggedDates.filter(key => key !== date), drafts: Object.fromEntries(Object.entries(d.drafts ?? {}).filter(([key]) => key !== date)) }), '未記録に戻しました') }} />
         </>}
-        {view === 'costs' && <>{!setup.fixedCostsConfirmed && <div className="setup-cost-confirm"><button className="outline-button" onClick={() => { setData(d => markFixedCostPeriod({ ...d, setup: { ...setup, fixedCostsConfirmed: true } }, period.key)); notify('固定費の設定を完了しました') }}><Check size={16} />{fixedCosts.length ? '固定費の設定を完了' : '固定費なしで完了'}</button></div>}<div className="cost-grid">{(['fixed', 'extra'] as const).map(kind => <section className="panel" key={kind}><div className="section-heading"><h2>{kind === 'fixed' ? '固定費' : '臨時支出'}</h2><span>{yen(kind === 'fixed' ? summary.fixed : summary.extra)}</span></div><div className="cost-list">{summary.costs.filter(c => c.kind === kind).map(c => <div className="cost-row" key={c.id}><button className="cost-edit" onClick={() => setModal({ type: 'cost', kind, cost: c })} aria-label={`${c.name}を編集`}>{c.name}</button><span>{yen(c.amount)}</span><button className="icon-button cost-delete" aria-label={`${c.name}を削除`} onClick={() => { if (confirm(`${periodLabel}の${c.name}を削除しますか？`)) setData(d => ({ ...d, costs: d.costs.filter(x => x.id !== c.id) })) }}><Trash2 size={16} /></button></div>)}{!summary.costs.some(c => c.kind === kind) && <div className="cost-empty">まだ登録されていません{kind === 'fixed' && previousFixedCosts.length > 0 && <button className="outline-button copy-fixed-button" onClick={() => { setData(d => copyFixedCosts(d, previousPeriod.key, period.key)); notify(`${previousPeriod.month}月期の固定費をコピーしました`) }}>{previousPeriod.month}月期の固定費をコピー</button>}</div>}</div><button className="outline-button full-width" onClick={() => setModal({ type: 'cost', kind })}><Plus size={16} />{kind === 'fixed' ? '固定費を追加' : '臨時支出を追加'}</button></section>)}</div></>}
+        {view === 'costs' && <>{!setup.fixedCostsConfirmed && <div className="setup-cost-confirm"><button className="outline-button" onClick={() => { setData(d => markFixedCostPeriod({ ...d, setup: { ...setup, fixedCostsConfirmed: true } }, period.key)); notify('固定費の設定を完了しました') }}><Check size={16} />{fixedCosts.length ? '固定費の設定を完了' : '固定費なしで完了'}</button></div>}<div className="cost-grid">{(['fixed', 'extra'] as const).map(kind => <section className="panel" key={kind}><div className="section-heading"><h2>{kind === 'fixed' ? '固定費' : '臨時支出'}</h2><span>{yen(kind === 'fixed' ? summary.fixed : summary.extra)}</span></div><div className="cost-list">{summary.costs.filter(c => c.kind === kind).map(c => <div className="cost-row" key={c.id}><button className="cost-edit" onClick={() => setModal({ type: 'cost', kind, cost: c })} aria-label={`${c.name}を編集`}>{c.name}</button><span>{yen(c.amount)}</span><button className="icon-button cost-delete" aria-label={`${c.name}を削除`} onClick={() => { if (confirm(`${periodLabel}の${c.name}を削除しますか？`)) changeData(d => ({ ...d, costs: d.costs.filter(x => x.id !== c.id) }), '支出を削除しました') }}><Trash2 size={16} /></button></div>)}{!summary.costs.some(c => c.kind === kind) && <div className="cost-empty">まだ登録されていません{kind === 'fixed' && previousFixedCosts.length > 0 && <button className="outline-button copy-fixed-button" onClick={() => { changeData(d => copyFixedCosts(d, previousPeriod.key, period.key), `${previousPeriod.month}月期の固定費をコピーしました`) }}>{previousPeriod.month}月期の固定費をコピー</button>}</div>}</div><button className="outline-button full-width" onClick={() => setModal({ type: 'cost', kind })}><Plus size={16} />{kind === 'fixed' ? '固定費を追加' : '臨時支出を追加'}</button></section>)}</div></>}
         {view === 'settings' && <div className="settings-grid"><section className="panel"><div className="section-heading"><h2>給料の設定</h2>{setup.dismissed && <button className="text-button" onClick={() => setData(d => ({ ...d, setup: { ...setup, dismissed: false } }))}>初期設定を表示</button>}</div><form className="settings-form" key={JSON.stringify(data.settings)} onSubmit={e => {
           e.preventDefault(); const f = new FormData(e.currentTarget)
           setData(d => ({ ...d, settings: { income: Number(f.get('income')), payday: Number(f.get('payday')), holidays: f.get('holidays') === 'on' }, setup: { ...setup, paydayConfirmed: true } })); setOffset(0); notify('設定を保存しました')
@@ -209,6 +214,6 @@ export default function App() {
     <dialog ref={dialogRef} onCancel={() => setModal(null)} onClick={e => { if (e.target === e.currentTarget) setModal(null) }} aria-labelledby="dialog-title">{modal && <div className="modal-content"><div className="section-heading"><h2 id="dialog-title">{modal.type === 'expense' ? modal.expense ? '支出を編集' : '金額を入力' : modal.kind === 'fixed' ? modal.cost ? '固定費を編集' : '固定費を追加' : modal.cost ? '臨時支出を編集' : '臨時支出を追加'}</h2><button className="icon-button" onClick={() => setModal(null)} aria-label="閉じる"><X size={20} /></button></div><form className="entry-form" onSubmit={modal.type === 'expense' ? saveExpense : saveCost}>
       {modal.type === 'expense' ? <><label>日付<input name="date" type="date" min="2020-01-01" max={todayKey} defaultValue={modal.expense?.date || (offset === 0 ? todayKey : dateKey(period.end))} required /></label><label>使った金額<div className="input-with-unit"><input autoFocus name="amount" type="number" min="1" max="1000000000" step="1" placeholder="0" defaultValue={modal.expense?.amount} required /><span>円</span></div></label><label>メモ <span className="optional">任意</span><input name="note" maxLength={100} placeholder="例：ランチ、おやつ、帰りの電車" defaultValue={modal.expense?.note} /></label></> : <><details className="inline-help"><summary>日々の支出との分け方 <ChevronRight size={16} /></summary><p>ここに登録した分は、日々の支出に重ねて入力しません。二重に引かれて、残せる額が少なくなるためです。</p></details><label>項目名<input autoFocus name="name" defaultValue={modal.cost?.name} required maxLength={100} placeholder={modal.kind === 'fixed' ? '例：家賃、電気代' : '例：友人へのプレゼント'} /></label><label>金額<div className="input-with-unit"><input name="amount" defaultValue={modal.cost?.amount} type="number" min="1" max="1000000000" step="1" placeholder="0" required /><span>円</span></div></label></>}
       <button className="primary-button full-width" type="submit"><Check size={17} />{modal.type === 'expense' ? '記録を保存' : '支出を保存'}</button></form></div>}</dialog>
-    {toast && <div className="toast" role="status"><Check size={17} />{toast}</div>}
+    {toast && <div className="toast" role="status"><Check size={17} /><span>{toast}</span>{undo && <button type="button" onClick={undoChange}>元に戻す</button>}</div>}
   </div>
 }

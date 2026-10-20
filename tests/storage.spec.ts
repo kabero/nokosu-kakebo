@@ -28,7 +28,7 @@ async function download(page: Page, button = 'バックアップを書き出す'
   return readFile((await file.path())!, 'utf8')
 }
 async function inputToday(page: Page, value: string) {
-  await page.getByRole('button', { name: '今日の金額を入力', exact: true }).click()
+  await page.getByRole('button', { name: /^今日の(金額を入力|金額を追加|入力を再開)$/ }).click()
   await page.locator('input[name=dailyAmount]').fill(value)
 }
 async function saveDay(page: Page) { await page.getByRole('button', { name: '保存', exact: true }).click() }
@@ -247,7 +247,7 @@ test('読み取り権限エラー時に初期値で上書きしたり空のバ�
 })
 test('速い連続入力でも途中の古い式に巻き戻らず再開できる', async ({ page }) => {
   await start(page)
-  await page.getByRole('button', { name: '今日の金額を入力', exact: true }).click()
+  await page.getByRole('button', { name: /^今日の(金額を入力|金額を追加|入力を再開)$/ }).click()
   await page.locator('input[name=dailyAmount]').pressSequentially('580+920+150')
   await expect.poll(async () => (await data(page)).drafts).toHaveProperty('2026-10-20.expression', '580+920+150')
   await page.reload()
@@ -353,3 +353,58 @@ for (const width of [320, 375, 390]) {
     }
   })
 }
+
+test('金額の保存を取り消すと他の日を保ったまま元に戻り、再読み込みでも保持される', async ({ page }) => {
+  await start(page)
+  await inputToday(page, '1500')
+  await saveDay(page)
+  await page.getByRole('button', { name: '元に戻す', exact: true }).click()
+  await expect.poll(async () => (await data(page)).expenses).toEqual(fixture().expenses)
+  expect((await data(page)).loggedDates).toEqual(fixture().loggedDates)
+  await page.reload()
+  expect((await data(page)).expenses).toEqual(fixture().expenses)
+  await expect(page.getByRole('button', { name: '元に戻す', exact: true })).toHaveCount(0)
+})
+test('固定費の削除を取り消すと名前・金額・月期が完全に復元される', async ({ page }) => {
+  await start(page)
+  await page.getByRole('button', { name: '固定費・臨時支出', exact: true }).click()
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: '家賃を削除', exact: true }).click()
+  await expect.poll(async () => (await data(page)).costs.length).toBe(1)
+  await page.getByRole('button', { name: '元に戻す', exact: true }).click()
+  await expect.poll(async () => (await data(page)).costs).toEqual(fixture().costs)
+})
+test('取り消しは10秒後または新しい入力で解除され、過去の操作に戻らない', async ({ page }) => {
+  await start(page)
+  await inputToday(page, '1500')
+  await saveDay(page)
+  await page.clock.fastForward(10001)
+  await expect(page.getByRole('button', { name: '元に戻す', exact: true })).toHaveCount(0)
+  await inputToday(page, '200')
+  await saveDay(page)
+  await expect(page.getByRole('button', { name: '元に戻す', exact: true })).toBeVisible()
+  await inputToday(page, '300')
+  await expect(page.getByRole('button', { name: '元に戻す', exact: true })).toHaveCount(0)
+})
+
+test('キーボードで表示領域が縮んでも入力欄を隠さず、閉じると位置を戻す', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await start(page)
+  await inputToday(page, '1234')
+  await page.evaluate(() => {
+    const viewport = window.visualViewport!
+    Object.defineProperty(viewport, 'height', { configurable: true, value: 420 })
+    viewport.dispatchEvent(new Event('resize'))
+  })
+  const editor = page.locator('.calendar-dialog')
+  await expect(editor).toHaveCSS('bottom', '424px')
+  const input = await page.locator('input[name=dailyAmount]').boundingBox()
+  expect(input!.y).toBeGreaterThanOrEqual(0)
+  expect(input!.y + input!.height).toBeLessThanOrEqual(420)
+  await expect(page.locator('input[name=dailyAmount]')).toHaveValue('1234')
+  await page.evaluate(() => {
+    Object.defineProperty(window.visualViewport!, 'height', { configurable: true, value: 844 })
+    window.visualViewport!.dispatchEvent(new Event('resize'))
+  })
+  await expect(editor).toHaveCSS('bottom', '0px')
+})
