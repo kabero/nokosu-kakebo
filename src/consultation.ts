@@ -9,6 +9,7 @@ export function consultationText({ data, period, today, includeDaily = false }: 
   const forecast = forecastSavings(data, period, today)
   const lines = [
     `対象：${period.year}年${period.month}月期（${dateKey(period.start)}〜${dateKey(period.end)}）`,
+    `固定費の合計：${yen(summary.fixed)}`,
     `記録した生活費：${yen(summary.spent)}`,
     `記録日数：${summary.recorded}日（0円の記録を含む）`,
     `記録した日の1日平均：${summary.average === null ? '記録なし' : yen(summary.average)}`,
