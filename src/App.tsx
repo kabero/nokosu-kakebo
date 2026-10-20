@@ -10,7 +10,7 @@ import PaydayCountdown from './PaydayCountdown'
 import InstallPrompt from './InstallPrompt'
 import Charts from './Charts'
 import AiCopy from './AssistantCopy'
-import { DataStorage, STORAGE_KEY, STORAGE_LOCK, parseBackup } from './storage'
+import { DataStorage, STORAGE_KEY, STORAGE_LOCK, MAX_BACKUP_BYTES, parseBackup } from './storage'
 import { siteUrl } from './siteUrls'
 import CardImage from './CardImage'
 
@@ -161,11 +161,11 @@ export default function App() {
     const file = event.target.files?.[0]; event.target.value = ''
     if (!file) return
     try {
-      if (file.size > 5000000) throw new Error()
+      if (file.size > MAX_BACKUP_BYTES) throw new Error()
       const parsed = parseBackup(await file.text(), today)
       if (!confirm('現在のデータをバックアップの内容で置き換えますか？')) return
       await replaceData(parsed, 'バックアップを読み込みました')
-    } catch { setError('読み込めませんでした。のこす家計簿から書き出した有効な JSON ファイル（5 MB 以下）を選んでください。') }
+    } catch { setError('読み込めませんでした。のこす家計簿から書き出した有効な JSON ファイル（16 MB 以下）を選んでください。') }
   }
   const recovery = error ? storage.previousText() : null
 
