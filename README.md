@@ -26,6 +26,7 @@ npm run preview      # 紹介ページの本番ビルドを確認
 
 ## ドキュメント
 
+- [LPの設計](docs/PRODUCT_DESIGN.md)
 - [公開設定・データ移行](DEPLOY.md)
 - [計算・保存・開発ルール](docs/DEVELOPMENT.md)
 - [AdSenseの設定](ADSENSE.md)
