@@ -34,3 +34,5 @@
 .toast{max-width:calc(100vw - 32px);white-space:normal;gap:10px}.toast>svg{flex-shrink:0}.toast>span{min-width:0}.toast>button{flex-shrink:0;background:none;border:0;border-left:1px solid #ffffff55;color:inherit;padding:8px 0 8px 12px;min-height:44px;text-decoration:underline;text-underline-offset:4px;font-weight:600}
 
 @media(max-width:650px){.calendar-dialog{position:fixed;top:auto;bottom:var(--editor-bottom,0px);margin:0;max-height:calc(var(--editor-height,100dvh) - 16px);overflow-y:auto;scroll-padding:16px}.calendar-editor input{scroll-margin:16px}}
+
+.card-image-actions .card-image-download{display:none}@media(hover:hover) and (pointer:fine){.card-image-actions .card-image-download{display:inline-flex}}
