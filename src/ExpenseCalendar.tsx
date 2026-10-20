@@ -33,6 +33,30 @@ export default function ExpenseCalendar({ period, today, initialDate, expenses, 
   const resultingTotal = amount === null ? null : mode === 'add' ? existingTotal + amount : amount
   const valid = resultingTotal !== null && resultingTotal <= 1000000000
   useEffect(() => {
+    if (!selected || !window.visualViewport) return
+    const viewport = window.visualViewport
+    const element = dialog.current
+    let frame = 0
+    const fit = () => {
+      element?.style.setProperty('--editor-height', `${viewport.height}px`)
+      element?.style.setProperty('--editor-bottom', `${Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)}px`)
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        if (document.activeElement === input.current) input.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      })
+    }
+    fit()
+    viewport.addEventListener('resize', fit)
+    viewport.addEventListener('scroll', fit)
+    return () => {
+      cancelAnimationFrame(frame)
+      viewport.removeEventListener('resize', fit)
+      viewport.removeEventListener('scroll', fit)
+      element?.style.removeProperty('--editor-height')
+      element?.style.removeProperty('--editor-bottom')
+    }
+  }, [selected])
+  useEffect(() => {
     if (selected) {
       lastSelected.current = selected
       dialog.current?.showModal()

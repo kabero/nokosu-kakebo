@@ -65,7 +65,7 @@ export default function CardImage(props: Props) {
     if (!image) return
     setBusy(true); setMessage('')
     try { await navigator.share({ files: [image.file] }) }
-    catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) setMessage('共有できませんでした「画像を保存」から保存できます') }
+    catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) setMessage('共有できませんでした') }
     finally { setBusy(false) }
   }
   const canShare = image && typeof navigator.share === 'function' && navigator.canShare?.({ files: [image.file] })
@@ -73,7 +73,7 @@ export default function CardImage(props: Props) {
     <button className="text-button card-image-entry" disabled={busy} onClick={open}><ImageDown size={16} />画像で保存</button>
     <dialog ref={dialog} className="card-image-dialog" aria-labelledby="card-image-title" onClick={event => { if (event.target === event.currentTarget) dialog.current?.close() }}>
       <div className="card-image-content"><div className="section-heading"><h2 id="card-image-title">カードを画像で保存</h2><button className="icon-button" aria-label="閉じる" onClick={() => dialog.current?.close()}><X size={19} /></button></div>
-        {image ? <><img src={image.url} alt="保存する残せるお金のカード" /><div className="card-image-actions">{canShare && <button className="primary-button" disabled={busy} onClick={share}><Share2 size={16} />共有・写真に保存</button>}<a className="outline-button" href={image.url} download={image.file.name}><Download size={16} />画像を保存</a></div></> : busy && <p role="status">画像を作成中</p>}
+        {image ? <><img src={image.url} alt="保存する残せるお金のカード" /><div className="card-image-actions">{canShare && <button className="primary-button" disabled={busy} onClick={share}><Share2 size={16} />共有・写真に保存</button>}<a className="outline-button card-image-download" href={image.url} download={image.file.name}><Download size={16} />画像を保存</a></div></> : busy && <p role="status">画像を作成中</p>}
         {message && <p role="status">{message}</p>}
       </div>
     </dialog>
