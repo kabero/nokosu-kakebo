@@ -6,6 +6,7 @@ import Tips from './Tips'
 import Migration from './Migration'
 import './style.css'
 import './surfaces.css'
+import './landing.css'
 import './print.css'
 
 const path = window.location.pathname
