@@ -132,10 +132,6 @@ export default function App() {
     if (!cost.name || !Number.isSafeInteger(cost.amount) || cost.amount < 1 || cost.amount > 1000000000) return
     changeData(d => { const updated = { ...d, costs: [...d.costs.filter(c => c.id !== cost.id), cost] }; return cost.kind === 'fixed' ? markFixedCostPeriod(updated, period.key) : updated }, '支出を保存しました'); setModal(null)
   }
-  function removeExpense(id: string) {
-    if (!confirm('この支出を削除しますか？ この日は記録済みのままになります。')) return
-    changeData(d => ({ ...d, expenses: d.expenses.filter(e => e.id !== id) }), '支出を削除しました')
-  }
   function downloadText(text: string, filename: string) {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
     const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
@@ -161,10 +157,7 @@ export default function App() {
     } catch { setError('読み込めませんでした。のこす家計簿から書き出した有効な JSON ファイル（5 MB 以下）を選んでください。') }
   }
   const recovery = error ? storage.previousText() : null
-  const expenseList = (expenses: Expense[], limit?: number) => expenses.length ? <div className="expense-list">{[...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit).map(e => <div className="expense-row" key={e.id}>
-    <button className="expense-description" onClick={() => setModal({ type: 'expense', expense: e })}><strong>{e.note || '生活費'}</strong><span>{shortDate(parseDate(e.date))}</span></button>
-    <strong className="expense-amount">{yen(e.amount)}</strong><button className="icon-button delete-expense" aria-label={`${e.note || '生活費'}を削除`} onClick={() => removeExpense(e.id)}><Trash2 size={15} /></button>
-  </div>)}</div> : <div className="empty-state">支出の記録がありません</div>
+
 
   const aboutUrl = siteUrl
 
@@ -209,7 +202,6 @@ export default function App() {
         {view === 'charts' && <Charts key={period.key} data={data} period={period} today={today} />}
         {view === 'history' && <>
           <ExpenseCalendar key={period.key} period={period} today={todayKey} initialDate={calendarDate} expenses={summary.expenses} loggedDates={data.loggedDates} drafts={data.drafts ?? {}} onDraftChange={(date: string, draft: Draft | null) => setData(d => ({ ...d, drafts: draft ? { ...d.drafts, [date]: draft } : Object.fromEntries(Object.entries(d.drafts ?? {}).filter(([key]) => key !== date)) }))} onSave={(date, amount, mode) => { changeData(d => recordDailyAmount(d, date, amount, mode), `${shortDate(parseDate(date))}を保存しました`); if (date === todayKey) { setOffset(0); setCalendarDate(null); setView('overview') } }} onClear={date => { changeData(d => ({ ...d, expenses: d.expenses.filter(e => e.date !== date), loggedDates: d.loggedDates.filter(key => key !== date), drafts: Object.fromEntries(Object.entries(d.drafts ?? {}).filter(([key]) => key !== date)) }), '未記録に戻しました') }} />
-          {summary.expenses.length > 0 && <details className="entry-details"><summary>明細 <span>{summary.expenses.length}件</span><ChevronRight size={17} /></summary>{expenseList(summary.expenses)}</details>}
         </>}
         {view === 'costs' && <>{!setup.fixedCostsConfirmed && <div className="setup-cost-confirm"><button className="outline-button" onClick={() => { setData(d => markFixedCostPeriod({ ...d, setup: { ...setup, fixedCostsConfirmed: true } }, period.key)); notify('固定費の設定を完了しました') }}><Check size={16} />{fixedCosts.length ? '固定費の設定を完了' : '固定費なしで完了'}</button></div>}<div className="cost-grid">{(['fixed', 'extra'] as const).map(kind => <section className="panel" key={kind}><div className="section-heading"><h2>{kind === 'fixed' ? '固定費' : '臨時支出'}</h2><span>{yen(kind === 'fixed' ? summary.fixed : summary.extra)}</span></div><div className="cost-list">{summary.costs.filter(c => c.kind === kind).map(c => <div className="cost-row" key={c.id}><button className="cost-edit" onClick={() => setModal({ type: 'cost', kind, cost: c })} aria-label={`${c.name}を編集`}>{c.name}</button><span>{yen(c.amount)}</span><button className="icon-button cost-delete" aria-label={`${c.name}を削除`} onClick={() => { if (confirm(`${periodLabel}の${c.name}を削除しますか？`)) changeData(d => ({ ...d, costs: d.costs.filter(x => x.id !== c.id) }), '支出を削除しました') }}><Trash2 size={16} /></button></div>)}{!summary.costs.some(c => c.kind === kind) && <div className="cost-empty">まだ登録されていません{kind === 'fixed' && previousFixedCosts.length > 0 && <button className="outline-button copy-fixed-button" onClick={() => { changeData(d => copyFixedCosts(d, previousPeriod.key, period.key), `${previousPeriod.month}月期の固定費をコピーしました`) }}>{previousPeriod.month}月期の固定費をコピー</button>}</div>}</div><button className="outline-button full-width" onClick={() => setModal({ type: 'cost', kind })}><Plus size={16} />{kind === 'fixed' ? '固定費を追加' : '臨時支出を追加'}</button></section>)}</div></>}
         {view === 'settings' && <div className="settings-grid"><section className="panel"><div className="section-heading"><h2>給料の設定</h2>{setup.dismissed && <button className="text-button" onClick={() => setData(d => ({ ...d, setup: { ...setup, dismissed: false } }))}>初期設定を表示</button>}</div><form className="settings-form" key={JSON.stringify(data.settings)} onSubmit={e => {
