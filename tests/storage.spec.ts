@@ -374,11 +374,11 @@ test('固定費の削除を取り消すと名前・金額・月期が完全に�
   await page.getByRole('button', { name: '元に戻す', exact: true }).click()
   await expect.poll(async () => (await data(page)).costs).toEqual(fixture().costs)
 })
-test('取り消しは10秒後または新しい入力で解除され、過去の操作に戻らない', async ({ page }) => {
+test('取り消しは5秒後または新しい入力で解除され、過去の操作に戻らない', async ({ page }) => {
   await start(page)
   await inputToday(page, '1500')
   await saveDay(page)
-  await page.clock.fastForward(10001)
+  await page.clock.fastForward(5001)
   await expect(page.getByRole('button', { name: '元に戻す', exact: true })).toHaveCount(0)
   await inputToday(page, '200')
   await saveDay(page)
@@ -408,3 +408,22 @@ test('キーボードで表示領域が縮んでも入力欄を隠さず、閉�
   })
   await expect(editor).toHaveCSS('bottom', '0px')
 })
+
+for (const touch of [false, true]) {
+  test(`通知の外を${touch ? 'タップ' : 'クリック'}すると取り消しが消え、移動先の操作も動く`, async ({ browser }) => {
+    const context = await browser.newContext({ hasTouch: touch, viewport: { width: 390, height: 844 }, baseURL: APP, timezoneId: 'Asia/Tokyo', serviceWorkers: 'block' })
+    const page = await context.newPage()
+    try {
+      await start(page)
+      await inputToday(page, '1500')
+      await saveDay(page)
+      await expect(page.getByRole('button', { name: '元に戻す', exact: true })).toBeVisible()
+      const navigation = page.getByRole('button', { name: '支出の記録', exact: true })
+      if (touch) await navigation.tap()
+      else await navigation.click()
+      await expect(page.locator('.toast')).toHaveCount(0)
+      await expect(page.locator('.expense-calendar')).toBeVisible()
+      await expect.poll(async () => (await data(page)).expenses.some(e => e.amount === 1500)).toBe(true)
+    } finally { await context.close() }
+  })
+}
